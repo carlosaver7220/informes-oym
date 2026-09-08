@@ -1,0 +1,10 @@
+{
+  "name": "informes-oym",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Generador de Informes OyM - SmartEnergy",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.124.0"
+  }
+}

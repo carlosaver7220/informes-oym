@@ -1,0 +1,20 @@
+# Configuración de Netlify para el Generador de Informes OyM.
+#
+# No hay proceso de compilación: la aplicación es un solo archivo HTML.
+# Netlify solo tiene que instalar las dependencias de la función serverless
+# (lo hace solo al encontrar el package.json de la raíz) y publicar "public".
+
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+# Entrar al dominio a secas abre el generador, sin escribir el nombre del
+# archivo. El 200 es una reescritura: la URL que ve el técnico sigue siendo
+# la raíz, y el enlace antiguo /GeneradorOyM.html también sigue funcionando.
+[[redirects]]
+  from = "/"
+  to = "/GeneradorOyM.html"
+  status = 200
+
+[functions]
+  node_bundler = "esbuild"

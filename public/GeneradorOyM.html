@@ -1,0 +1,3374 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=ai-legible&utm_source=comment&utm_medium=referral&utm_id=4454c133-c22e-4ba0-b820-bf500722b5b0
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+<meta name="hosting-provider" content="Netlify">
+<meta name="netlify-deploy" content="https://netlify.new/?utm_campaign=ai-legible&amp;utm_source=meta&amp;utm_medium=referral&amp;utm_id=4454c133-c22e-4ba0-b820-bf500722b5b0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Smart Energy - Generador de Informes</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
+
+    <!-- Recursos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #1e40af;
+            --primary-light: #3b82f6;
+            --primary-dark: #1e3a8a;
+            --secondary: #0ea5e9;
+            --accent: #06b6d4;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --gray-light: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: #f1f5f9;
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-container {
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0;
+            background-color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 1.5rem 1.25rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.25rem;
+        }
+
+        .header p {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .page-container {
+            flex: 1;
+            padding: 1.5rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background-color: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--gray-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 1.5px solid var(--gray-light);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            transition: all 0.2s;
+            background-color: white;
+            appearance: none;
+        }
+
+        /* La flecha solo tiene sentido en un desplegable: antes salia tambien
+           en los campos de texto y en las contrasenas. */
+        select.form-control {
+            padding-right: 2.75rem;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+            background-image: none;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background-color: var(--gray-light);
+            color: var(--dark);
+        }
+
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+        }
+
+        .btn-small {
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1.5px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(30, 64, 175, 0.05);
+        }
+
+        .login-logo {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            box-shadow: none;
+        }
+
+        .menu-card {
+            text-align: center;
+            padding: 2rem 1.5rem;
+        }
+
+        .menu-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--gray-light);
+            margin-bottom: 1.25rem;
+            cursor: pointer;
+        }
+
+        .section-header h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-icon {
+            font-size: 1.25rem;
+        }
+
+        .section-content {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+
+        .section-content.active {
+            /* Sin scroll anidado: en celular un contenedor con scroll dentro de la
+               pagina hace imposible desplazarse. La altura la calcula el JS. */
+            max-height: none;
+            padding: 0.25rem 0 1rem;
+            overflow: visible;
+        }
+
+        /* Estilos para scrollbar en contenedores activos */
+        .section-content.active::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .section-content.active::-webkit-scrollbar-track {
+            background: rgba(59, 130, 246, 0.05);
+            border-radius: 10px;
+        }
+
+        .section-content.active::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.4);
+            border-radius: 10px;
+        }
+
+        .section-content.active::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.6);
+        }
+
+        .section-arrow {
+            transition: transform 0.3s;
+        }
+
+        .section-header.active .section-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Estilos para las actividades seleccionadas */
+        .selected-activities-container {
+            margin-top: 1.5rem;
+        }
+
+        .selected-activity-item {
+            background-color: #f0f9ff;
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary);
+            position: relative;
+        }
+
+        .selected-activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .selected-activity-title {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 1rem;
+            flex: 1;
+        }
+
+        .remove-activity-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 1.25rem;
+            cursor: pointer;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .remove-activity-btn:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        .activity-description {
+            font-size: 0.875rem;
+            color: var(--gray);
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .activity-notes {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-light);
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            resize: vertical;
+            margin-bottom: 0.75rem;
+            min-height: 80px;
+        }
+
+        .activity-notes:focus {
+            outline: none;
+            border-color: var(--primary-light);
+        }
+
+        /* Selector de actividades */
+        .activity-selector-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .activity-selector-group h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .activity-selector-group h4 i {
+            color: var(--primary);
+        }
+
+        .no-activities-message {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--gray);
+            font-style: italic;
+            background-color: #f8fafc;
+            border-radius: var(--radius-sm);
+            border: 1px dashed var(--gray-light);
+        }
+
+        /* Imágenes */
+        .image-upload {
+            border: 2px dashed var(--gray-light);
+            border-radius: var(--radius-sm);
+            padding: 1.5rem;
+            text-align: center;
+            margin-top: 0.75rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .image-upload:hover {
+            border-color: var(--primary-light);
+            background-color: rgba(59, 130, 246, 0.02);
+        }
+
+        .image-upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            color: var(--gray);
+        }
+
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .image-preview-item {
+            position: relative;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            border: 1px solid var(--gray-light);
+            flex: 0 1 auto;
+            cursor: move;
+            transition: opacity 0.2s;
+        }
+
+        .image-preview-item:hover {
+            opacity: 0.8;
+        }
+
+        .image-preview-item.dragging {
+            opacity: 0.5;
+        }
+
+        .image-preview-item.drag-over {
+            border: 2px dashed var(--primary);
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+
+        .image-preview-item img {
+            width: 100%;
+            object-fit: contain;
+            display: block;
+            background-color: #f0f0f0;
+        }
+
+        /* Imágenes verticales (portrait) */
+        .image-preview-item.portrait {
+            width: 100px;
+            min-height: 150px;
+        }
+
+        .image-preview-item.portrait img {
+            height: 150px;
+        }
+
+        /* Imágenes horizontales (landscape) */
+        .image-preview-item.landscape {
+            width: 150px;
+            min-height: 100px;
+        }
+
+        .image-preview-item.landscape img {
+            height: 100px;
+        }
+
+        .image-caption {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            border: none;
+            border-top: 1px solid var(--gray-light);
+            background-color: white;
+        }
+
+        .image-caption:focus {
+            outline: none;
+        }
+
+        .remove-image {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            background-color: rgba(239, 68, 68, 0.9);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Elementos dinámicos */
+        .dynamic-item {
+            background-color: #f8fafc;
+            border-radius: var(--radius-sm);
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            position: relative;
+            border: 1px solid var(--gray-light);
+        }
+
+        .delete-item-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 1.25rem;
+            cursor: pointer;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .delete-item-btn:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Overlay de carga */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--gray-light);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            height: 8px;
+            background-color: var(--gray-light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--gray);
+            font-size: 0.875rem;
+            border-top: 1px solid var(--gray-light);
+            background-color: white;
+        }
+
+        .error-message {
+            color: var(--danger);
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: var(--radius-sm);
+            padding: 0.875rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .success-message {
+            color: var(--success);
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: var(--radius-sm);
+            padding: 0.875rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .location-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            background-color: rgba(30, 64, 175, 0.05);
+            color: var(--primary);
+            border: 1.5px solid var(--primary-light);
+        }
+
+        .location-btn:hover {
+            background-color: rgba(30, 64, 175, 0.1);
+        }
+
+        .activity-counter {
+            background-color: var(--primary);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.625rem;
+            border-radius: 20px;
+            margin-left: 0.5rem;
+        }
+
+        /* Botón para añadir actividad */
+        .add-activity-btn {
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+
+        /* ==========================================================
+           DICTADO POR VOZ Y BOTON MEJORAR
+           ========================================================== */
+        .voz-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            align-items: center;
+        }
+
+        .btn-voz {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            padding: 0.6rem 0.95rem;
+            min-height: 44px;
+            border-radius: 999px;
+            border: 1.5px solid var(--gray-light);
+            background-color: white;
+            color: var(--dark);
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.18s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-voz i { font-size: 0.95rem; }
+
+        .btn-voz:active { transform: scale(0.97); }
+
+        .btn-voz.btn-dictar {
+            border-color: var(--primary-light);
+            color: var(--primary);
+            background-color: rgba(59, 130, 246, 0.06);
+        }
+
+        .btn-voz.btn-dictar.grabando {
+            background-color: var(--danger);
+            border-color: var(--danger);
+            color: white;
+            animation: pulsoGrabacion 1.4s ease-in-out infinite;
+        }
+
+        @keyframes pulsoGrabacion {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+            50%      { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        }
+
+        .btn-voz.btn-mejorar {
+            border-color: #7c3aed;
+            color: #7c3aed;
+            background-color: rgba(124, 58, 237, 0.06);
+        }
+
+        .btn-voz.btn-mejorar.trabajando {
+            opacity: 0.65;
+            pointer-events: none;
+        }
+
+        .btn-voz.btn-deshacer {
+            border-color: var(--gray-light);
+            color: var(--gray);
+        }
+
+        .btn-voz[disabled] {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .voz-estado {
+            font-size: 0.8rem;
+            color: var(--gray);
+            flex-basis: 100%;
+            min-height: 1.1rem;
+            line-height: 1.35;
+        }
+
+        .voz-estado.error { color: var(--danger); }
+        .voz-estado.ok { color: var(--success); }
+
+        /* Texto provisional que se va escuchando, antes de confirmarse */
+        .voz-interim {
+            display: none;
+            margin-top: 0.4rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: var(--radius-sm);
+            background-color: rgba(239, 68, 68, 0.06);
+            border: 1px dashed rgba(239, 68, 68, 0.35);
+            font-size: 0.875rem;
+            color: var(--gray);
+            font-style: italic;
+        }
+
+        .voz-interim.activo { display: block; }
+
+        /* ==========================================================
+           IMAGENES - rejilla uniforme y comoda en celular
+           ========================================================== */
+        .image-preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .image-preview-container:empty { margin-top: 0; }
+
+        .image-preview-item {
+            position: relative;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            border: 1px solid var(--gray-light);
+            background-color: white;
+            cursor: grab;
+            transition: opacity 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+            width: auto;
+            min-height: 0;
+        }
+
+        /* Todas las miniaturas iguales: la foto se ve completa dentro del recuadro */
+        .image-preview-item img,
+        .image-preview-item.portrait img,
+        .image-preview-item.landscape img {
+            width: 100%;
+            height: 110px;
+            object-fit: contain;
+            display: block;
+            background-color: #eef2f7;
+        }
+
+        .image-preview-item.portrait,
+        .image-preview-item.landscape {
+            width: auto;
+            min-height: 0;
+        }
+
+        .image-preview-item.dragging { opacity: 0.4; }
+        .image-preview-item.drag-over { border-color: var(--primary); border-style: dashed; }
+
+        .image-peso {
+            position: absolute;
+            left: 0.25rem;
+            top: 0.25rem;
+            background-color: rgba(15, 23, 42, 0.72);
+            color: white;
+            font-size: 0.625rem;
+            font-weight: 600;
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+        }
+
+        .remove-image {
+            width: 1.75rem;
+            height: 1.75rem;
+        }
+
+        .imagen-controles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .imagen-controles .image-upload {
+            flex: 1 1 190px;
+            margin-top: 0;
+            padding: 1.1rem 0.75rem;
+        }
+
+        .filas-control {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            font-size: 0.875rem;
+            color: var(--dark);
+        }
+
+        .filas-control input {
+            width: 68px;
+            min-height: 44px;
+            padding: 0.5rem;
+            border: 1.5px solid var(--gray-light);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            font-family: inherit;
+            text-align: center;
+        }
+
+        /* ==========================================================
+           BARRA DE ACCION FIJA (celular)
+           ========================================================== */
+        .barra-acciones {
+            position: sticky;
+            bottom: 0;
+            z-index: 20;
+            display: flex;
+            gap: 0.75rem;
+            padding: 0.75rem 0 calc(0.75rem + env(safe-area-inset-bottom));
+            margin-top: 0.5rem;
+            background: linear-gradient(to top, white 62%, rgba(255, 255, 255, 0));
+        }
+
+        .barra-acciones .btn { margin-bottom: 0; }
+
+        .barra-acciones .btn-secondary {
+            flex: 0 0 auto;
+            width: auto;
+            padding-left: 1.1rem;
+            padding-right: 1.1rem;
+        }
+
+        .barra-acciones .btn-success { flex: 1; }
+
+        /* Resumen de lo que ya lleva el informe */
+        .resumen-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.85rem;
+        }
+
+        .chip {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.3rem 0.65rem;
+            border-radius: 999px;
+            background-color: #eef2ff;
+            color: var(--primary);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .chip.vacio {
+            background-color: #f8fafc;
+            color: var(--gray);
+            border-color: var(--gray-light);
+        }
+
+        .aviso-guardado {
+            font-size: 0.75rem;
+            color: var(--gray);
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+
+        /* Toques comodos en celular */
+        .section-header {
+            padding: 1rem 0.25rem;
+            min-height: 56px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn { min-height: 48px; }
+        .btn-small { min-height: 44px; }
+
+        .form-control { font-size: 16px; } /* evita el zoom automatico de iOS */
+
+        .remove-activity-btn,
+        .delete-item-btn {
+            width: 2.5rem;
+            height: 2.5rem;
+            font-size: 1.15rem;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                max-width: 768px;
+                min-height: auto;
+                margin: 1rem auto;
+                border-radius: var(--radius-lg);
+                overflow: hidden;
+                box-shadow: var(--shadow-lg);
+            }
+
+            body {
+                padding: 1rem;
+                background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            }
+
+            .header {
+                padding: 2rem 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 1.75rem;
+            }
+
+            .page-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .image-preview-container {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            }
+
+            .image-preview-item img,
+            .image-preview-item.portrait img,
+            .image-preview-item.landscape img {
+                height: 130px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>Smart Energy</h1>
+            <p>Generador de informes técnicos</p>
+        </div>
+
+        <div class="page-container">
+            <!-- Página de Login -->
+            <div id="login-page" class="page active">
+                <div class="login-logo">
+                    <div class="logo-circle">
+                        <img src="https://raw.githubusercontent.com/Jairluna16/AUDIOS/refs/heads/main/jjj.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 style="margin-bottom: 1.5rem; text-align: center; color: var(--dark);">Iniciar Sesión</h2>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="username">Usuario</label>
+                            <input type="text" id="username" class="form-control" placeholder="Ingresa tu usuario" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Contraseña</label>
+                            <input type="password" id="password" class="form-control" placeholder="Ingresa tu contraseña" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt" style="margin-right: 0.5rem;"></i>
+                            Iniciar Sesión
+                        </button>
+
+                        <div id="errorMessage" class="error-message">
+                            Credenciales incorrectas. Intenta nuevamente.
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Página de Menú -->
+            <div id="menu-page" class="page">
+                <div class="card menu-card">
+                    <div class="menu-icon" style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
+                        <img src="https://raw.githubusercontent.com/Jairluna16/AUDIOS/refs/heads/main/jjj.png" alt="Logo" style="width: 6rem; height: 6rem; object-fit: contain;">
+                    </div>
+                    <h2 style="margin-bottom: 0.5rem; color: var(--dark); text-align: center;">Panel de Control</h2>
+                    <p style="margin-bottom: 2rem; color: var(--gray); text-align: center;">Selecciona una opción para continuar</p>
+
+                    <button id="goToMyOBtn" class="btn btn-primary" style="margin-bottom: 1rem;">
+                        <i class="fas fa-file-alt" style="margin-right: 0.5rem;"></i>
+                        Generar informe técnico
+                    </button>
+
+                    <button id="logoutBtn" class="btn btn-secondary">
+                        <i class="fas fa-sign-out-alt" style="margin-right: 0.5rem;"></i>
+                        Cerrar sesión
+                    </button>
+                </div>
+            </div>
+
+            <!-- Página de Generación de Informe -->
+            <div id="report-page" class="page">
+                <div class="card" style="margin-bottom: 1rem;">
+                    <h2 style="margin-bottom: 0.35rem; color: var(--dark);">Informe Técnico</h2>
+                    <p style="color: var(--gray);">Puedes dictar los textos con el micrófono en vez de escribirlos.</p>
+
+                    <div class="resumen-chips" id="resumen-chips"></div>
+
+                    <div style="height: 1.25rem;"></div>
+
+                    <form id="pdfForm">
+                        <div class="form-group">
+                            <label for="proyectoNombre">Nombre del Proyecto</label>
+                            <input type="text" id="proyectoNombre" class="form-control" placeholder="Ej: Fonda Paisa – 57 kWp" autocomplete="off" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ubicacion">Ubicación</label>
+                            <input type="text" id="ubicacion" class="form-control" placeholder="Coordenadas o dirección del proyecto" autocomplete="off">
+                            <button type="button" id="get-location-btn" class="btn btn-outline btn-small location-btn">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Obtener mi ubicación
+                            </button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fecha">Fecha del informe</label>
+                            <input type="date" id="fecha" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tecnicoNombre">Realizado por</label>
+                            <input type="text" id="tecnicoNombre" class="form-control" placeholder="Nombre completo del técnico" required>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="button" id="clear-form-btn" class="btn btn-outline btn-small" style="gap: 0.5rem; background-color: #f3f4f6; color: var(--dark); border-color: #e5e7eb;">
+                                <i class="fas fa-trash-alt" style="font-size: 0.875rem;"></i>
+                                Limpiar formulario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Sección de Actividades de Mantenimiento -->
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div class="section-header" id="maintenance-header">
+                        <h3>
+                            <i class="fas fa-tools section-icon"></i>
+                            Actividades de Mantenimiento
+                            <span class="activity-counter" id="activity-counter">0</span>
+                        </h3>
+                        <i class="fas fa-chevron-down section-arrow"></i>
+                    </div>
+                    <div class="section-content" id="maintenance-content">
+                        <!-- Selector de actividades preventivas -->
+                        <div class="activity-selector-group">
+                            <h4>
+                                <i class="fas fa-shield-alt"></i>
+                                Mantenimiento Preventivo
+                            </h4>
+                            <select class="form-control" id="preventive-activities-select">
+                                <option value="" selected disabled>Selecciona una actividad preventiva...</option>
+                                <!-- Las opciones se llenarán con JavaScript -->
+                            </select>
+                            <button type="button" class="btn btn-outline btn-small add-activity-btn" data-type="preventive">
+                                <i class="fas fa-plus"></i>
+                                Añadir actividad seleccionada
+                            </button>
+                        </div>
+
+                        <!-- Selector de actividades correctivas -->
+                        <div class="activity-selector-group">
+                            <h4>
+                                <i class="fas fa-wrench"></i>
+                                Mantenimiento Correctivo
+                            </h4>
+                            <select class="form-control" id="corrective-activities-select">
+                                <option value="" selected disabled>Selecciona una actividad correctiva...</option>
+                                <!-- Las opciones se llenarán con JavaScript -->
+                            </select>
+                            <button type="button" class="btn btn-outline btn-small add-activity-btn" data-type="corrective">
+                                <i class="fas fa-plus"></i>
+                                Añadir actividad seleccionada
+                            </button>
+                        </div>
+
+                        <!-- Actividades personalizadas -->
+                        <div class="activity-selector-group">
+                            <h4>
+                                <i class="fas fa-plus-circle"></i>
+                                Actividades Personalizadas
+                            </h4>
+                            <button type="button" id="add-custom-activity-btn" class="btn btn-outline btn-small">
+                                <i class="fas fa-plus" style="margin-right: 0.5rem;"></i>
+                                Crear actividad personalizada
+                            </button>
+                        </div>
+
+                        <!-- Contenedor de actividades seleccionadas -->
+                        <div class="selected-activities-container" id="selected-activities-container">
+                            <div class="no-activities-message" id="no-activities-message">
+                                <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                                <p>No hay actividades seleccionadas aún.</p>
+                                <p style="font-size: 0.875rem; margin-top: 0.5rem;">Selecciona actividades de los menús desplegables arriba.</p>
+                            </div>
+                            <!-- Las actividades seleccionadas se mostrarán aquí -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de Resultados -->
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div class="section-header" id="results-header">
+                        <h3>
+                            <i class="fas fa-chart-line section-icon"></i>
+                            Resultados y Hallazgos
+                        </h3>
+                        <i class="fas fa-chevron-down section-arrow"></i>
+                    </div>
+                    <div class="section-content" id="results-content">
+                        <div id="dynamic-resultados-container">
+                            <!-- Los resultados se añadirán dinámicamente aquí -->
+                        </div>
+
+                        <button type="button" id="add-resultado-btn" class="btn btn-outline btn-small" style="margin-top: 1rem;">
+                            <i class="fas fa-plus" style="margin-right: 0.5rem;"></i>
+                            Añadir resultado
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sección de Anomalías -->
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div class="section-header" id="anomalies-header">
+                        <h3>
+                            <i class="fas fa-exclamation-triangle section-icon"></i>
+                            Anomalías Detectadas
+                        </h3>
+                        <i class="fas fa-chevron-down section-arrow"></i>
+                    </div>
+                    <div class="section-content" id="anomalies-content">
+                        <div id="dynamic-anomalias-container">
+                            <!-- Las anomalías se añadirán dinámicamente aquí -->
+                        </div>
+
+                        <button type="button" id="add-anomalia-btn" class="btn btn-outline btn-small" style="margin-top: 1rem;">
+                            <i class="fas fa-plus" style="margin-right: 0.5rem;"></i>
+                            Añadir anomalía
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sección de Recomendaciones -->
+                <div class="card" style="margin-bottom: 1rem;">
+                    <div class="section-header" id="recommendations-header">
+                        <h3>
+                            <i class="fas fa-lightbulb section-icon"></i>
+                            Recomendaciones
+                        </h3>
+                        <i class="fas fa-chevron-down section-arrow"></i>
+                    </div>
+                    <div class="section-content" id="recommendations-content">
+                        <div id="dynamic-recomendaciones-container">
+                            <!-- Las recomendaciones se añadirán dinámicamente aquí -->
+                        </div>
+
+                        <button type="button" id="add-recomendacion-btn" class="btn btn-outline btn-small" style="margin-top: 1rem;">
+                            <i class="fas fa-plus" style="margin-right: 0.5rem;"></i>
+                            Añadir recomendación
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sección de Conclusión -->
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="section-header" id="conclusion-header">
+                        <h3>
+                            <i class="fas fa-check-circle section-icon"></i>
+                            Conclusión
+                        </h3>
+                        <i class="fas fa-chevron-down section-arrow"></i>
+                    </div>
+                    <div class="section-content" id="conclusion-content">
+                        <div class="form-group">
+                            <label for="conclusion">Resumen final del informe</label>
+                            <textarea id="conclusion" class="form-control" data-voz="Conclusión" rows="4" placeholder="Resumen general del mantenimiento realizado y observaciones finales..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción (barra fija al pie en celular) -->
+                <div class="barra-acciones">
+                    <button type="button" id="backToMenuBtn" class="btn btn-secondary" aria-label="Volver al menú">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button type="submit" form="pdfForm" id="enviar" class="btn btn-success">
+                        <i class="fas fa-file-pdf" style="margin-right: 0.5rem;"></i>
+                        Generar PDF
+                    </button>
+                </div>
+
+                <p class="aviso-guardado" id="aviso-guardado"></p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Diseñado por Jair Luna • Smart Energy © <span id="anio-actual">2026</span></p>
+        </div>
+    </div>
+
+    <!-- Overlay de carga -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h3 style="margin-bottom: 0.5rem; color: var(--dark);">Generando informe</h3>
+            <p style="color: var(--gray); margin-bottom: 1.5rem;" id="progress-detail">Preparando el documento...</p>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+
+            <p id="progress-text" style="font-weight: 600; color: var(--primary);">0% completado</p>
+        </div>
+    </div>
+
+    <!-- Templates -->
+    <template id="template-selected-activity">
+        <div class="selected-activity-item" data-activity-type="" data-activity-id="">
+            <div class="selected-activity-header">
+                <div class="selected-activity-title"></div>
+                <button type="button" class="remove-activity-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="activity-description"></div>
+
+            <div class="form-group">
+                <label>Notas adicionales (opcional)</label>
+                <textarea data-voz="Notas de la actividad" class="activity-notes" placeholder="Agrega detalles adicionales, observaciones, o modificaciones a esta actividad..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Imágenes de la actividad (opcional)</label>
+                <div class="imagen-controles">
+                    <div class="image-upload" style="flex: 1;">
+                        <label class="image-upload-label">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <span style="color: var(--gray);">Toca para tomar o elegir fotos</span>
+                            <span style="font-size: 0.75rem; color: var(--gray);">Se comprimen solas para que el PDF pese poco</span>
+                        </label>
+                        <input type="file" multiple accept="image/*" style="display: none;">
+                    </div>
+                    <div class="filas-control">
+                        <label>Por fila:</label>
+                        <input type="number" class="activity-images-per-row" value="2" min="1" max="4" inputmode="numeric">
+                    </div>
+                </div>
+
+                <div class="image-preview-container"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-custom-activity">
+        <div class="selected-activity-item custom-activity" data-activity-type="custom" data-activity-id="">
+            <div class="selected-activity-header">
+                <div class="selected-activity-title">Actividad Personalizada</div>
+                <button type="button" class="remove-activity-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label>Nombre de la actividad</label>
+                <input type="text" class="form-control custom-activity-title" placeholder="Ej: Poda de árboles, Limpieza de paneles, etc.">
+            </div>
+
+            <div class="form-group">
+                <label>Descripción detallada</label>
+                <textarea data-voz="Descripción de la actividad" class="activity-notes" placeholder="Describe en detalle la actividad realizada..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Imágenes de la actividad (opcional)</label>
+                <div class="imagen-controles">
+                    <div class="image-upload" style="flex: 1;">
+                        <label class="image-upload-label">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <span style="color: var(--gray);">Toca para tomar o elegir fotos</span>
+                            <span style="font-size: 0.75rem; color: var(--gray);">Se comprimen solas para que el PDF pese poco</span>
+                        </label>
+                        <input type="file" multiple accept="image/*" style="display: none;">
+                    </div>
+                    <div class="filas-control">
+                        <label>Por fila:</label>
+                        <input type="number" class="activity-images-per-row" value="2" min="1" max="4" inputmode="numeric">
+                    </div>
+                </div>
+
+                <div class="image-preview-container"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-resultado">
+        <div class="dynamic-item">
+            <button type="button" class="delete-item-btn delete-section-btn">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="form-group">
+                <label>Descripción del resultado</label>
+                <textarea data-voz="Resultado" class="form-control resultado-text" rows="3" placeholder="Describe los resultados obtenidos, mejoras observadas..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Imágenes del resultado (opcional)</label>
+                <div class="imagen-controles">
+                    <div class="image-upload" style="flex: 1;">
+                        <label class="image-upload-label">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <span style="color: var(--gray);">Toca para tomar o elegir fotos</span>
+                        </label>
+                        <input type="file" multiple accept="image/*" class="resultado-images-input" style="display: none;">
+                    </div>
+                    <div class="filas-control">
+                        <label>Por fila:</label>
+                        <input type="number" class="result-images-per-row" value="2" min="1" max="4" inputmode="numeric">
+                    </div>
+                </div>
+
+                <div class="image-preview-container"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-anomalia">
+        <div class="dynamic-item">
+            <button type="button" class="delete-item-btn delete-section-btn">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="form-group">
+                <label>Descripción de la anomalía</label>
+                <textarea data-voz="Anomalía" class="form-control anomalia-text" rows="3" placeholder="Describe detalladamente la anomalía encontrada..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Imágenes de la anomalía (opcional)</label>
+                <div class="imagen-controles">
+                    <div class="image-upload" style="flex: 1;">
+                        <label class="image-upload-label">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <span style="color: var(--gray);">Toca para tomar o elegir fotos</span>
+                        </label>
+                        <input type="file" multiple accept="image/*" class="anomalia-images-input" style="display: none;">
+                    </div>
+                    <div class="filas-control">
+                        <label>Por fila:</label>
+                        <input type="number" class="anomaly-images-per-row" value="2" min="1" max="4" inputmode="numeric">
+                    </div>
+                </div>
+
+                <div class="image-preview-container"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-recomendacion">
+        <div class="dynamic-item">
+            <button type="button" class="delete-item-btn delete-section-btn">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="form-group">
+                <label>Descripción de la recomendación</label>
+                <textarea data-voz="Recomendación" class="form-control recomendacion-text" rows="3" placeholder="Proporciona una recomendación detallada..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Imágenes de la recomendación (opcional)</label>
+                <div class="imagen-controles">
+                    <div class="image-upload" style="flex: 1;">
+                        <label class="image-upload-label">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <span style="color: var(--gray);">Toca para tomar o elegir fotos</span>
+                        </label>
+                        <input type="file" multiple accept="image/*" class="recomendacion-images-input" style="display: none;">
+                    </div>
+                    <div class="filas-control">
+                        <label>Por fila:</label>
+                        <input type="number" class="recommendation-images-per-row" value="2" min="1" max="4" inputmode="numeric">
+                    </div>
+                </div>
+
+                <div class="image-preview-container"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-image-preview">
+        <div class="image-preview-item">
+            <img src="" alt="Previsualización">
+            <span class="image-peso"></span>
+            <button type="button" class="remove-image" aria-label="Quitar imagen">
+                <i class="fas fa-times"></i>
+            </button>
+            <input type="text" class="image-caption" placeholder="Pie de foto (opcional)">
+        </div>
+    </template>
+
+    <script>
+        // Datos predefinidos de actividades
+        const maintenanceActivities = {
+            preventive: [
+                {
+                    id: "prev-1",
+                    title: "Lavado y limpieza de módulos",
+                    description: "Se utiliza un cepillo eléctrico y un champú especial para limpiar a fondo los paneles. Esto asegura que no haya suciedad o residuos que puedan bloquear la luz solar, lo que optimiza la generación de energía."
+                },
+                {
+                    id: "prev-2",
+                    title: "Limpieza de zona de inversores y tableros",
+                    description: "Se realiza una limpieza general de los inversores, tableros de protecciones DC y el tablero principal. Esto evita la acumulación de polvo y suciedad que podría causar sobrecalentamiento o fallas."
+                },
+                {
+                    id: "prev-3",
+                    title: "Inspección visual",
+                    description: "Se lleva a cabo una revisión detallada de toda la granja solar para verificar el estado de los módulos, inversores, cableado y tableros. Esto ayuda a detectar cualquier problema potencial antes de que se convierta en una falla mayor."
+                },
+                {
+                    id: "prev-4",
+                    title: "Verificación de conexiones eléctricas",
+                    description: "Se inspeccionan todas las conexiones eléctricas, tanto en los strings como en los inversores y tableros. Se busca cualquier señal de sulfatación, puntos calientes, o conexiones sueltas para asegurar un contacto seguro y eficiente."
+                },
+                {
+                    id: "prev-5",
+                    title: "Toma de medidas de strings",
+                    description: "Se miden la tensión y la corriente de los strings para verificar que estén operando dentro de los parámetros esperados. Es recomendable hacerlo antes y después de la limpieza para confirmar la mejora en el rendimiento."
+                },
+                {
+                    id: "prev-6",
+                    title: "Ajustes mecánicos y retorqueo",
+                    description: "Se ajustan los anclajes de los paneles y se realiza un retorqueo en las borneras para asegurar que todas las fijaciones estén seguras. Esto es crucial para la estabilidad de la estructura."
+                },
+                {
+                    id: "prev-7",
+                    title: "Pintura de canalizaciones",
+                    description: "Se aplica pintura en las canalizaciones para una mejor identificación de los circuitos y para mantener la estética del sistema."
+                },
+                {
+                    id: "prev-8",
+                    title: "Pruebas de funcionamiento del sistema",
+                    description: "Se realizan pruebas para verificar el correcto desempeño de los inversores y la generación de energía general del sistema."
+                },
+                {
+                    id: "prev-9",
+                    title: "Revisión del sistema de puesta a tierra",
+                    description: "Se verifica que las conexiones a tierra estén en buen estado y miden la resistencia para asegurar que el sistema esté protegido contra descargas eléctricas y sobretensiones."
+                },
+                {
+                    id: "prev-10",
+                    title: "Inspección de sistemas de monitoreo",
+                    description: "Se revisa que el software y los equipos de monitoreo estén funcionando correctamente y registrando los datos de producción de manera precisa."
+                },
+                {
+                    id: "prev-11",
+                    title: "Limpieza de la vegetación",
+                    description: "Se retira cualquier vegetación (hierba, maleza) que pueda proyectar sombras sobre los paneles y reducir su eficiencia. También se limpia para prevenir incendios y garantizar el acceso seguro al área."
+                },
+                {
+                    id: "prev-12",
+                    title: "Revisión de cableado y conductores",
+                    description: "Se inspeccionan los cables y conductores para detectar daños en el aislamiento, asegurando que no haya roedores o elementos externos que los hayan afectado."
+                }
+            ],
+            corrective: [
+                {
+                    id: "corr-1",
+                    title: "Reemplazo de componentes defectuosos",
+                    description: "Se identifican y reemplazan los componentes que han fallado, como inversores, fusibles, protecciones o módulos dañados."
+                },
+                {
+                    id: "corr-2",
+                    title: "Reemplazo de marquillas y señalización",
+                    description: "Se sustituyen las marquillas o señalizaciones que se han deteriorado o perdido. Esto es importante para la seguridad del personal y para facilitar futuras inspecciones."
+                },
+                {
+                    id: "corr-3",
+                    title: "Refuerzo de pintura en líneas de peligro",
+                    description: "Se refuerza la pintura de demarcación que indica zonas de peligro alrededor de los inversores para garantizar la seguridad del personal de operación y mantenimiento."
+                },
+                {
+                    id: "corr-4",
+                    title: "Refuerzo de pintura anticorrosiva",
+                    description: "Se aplica pintura anticorrosiva en las partes metálicas que muestran signos de corrosión para prevenir daños mayores a la estructura."
+                }
+            ]
+        };
+
+
+        // ============================================================
+        // MÓDULO DE IMÁGENES
+        // Las fotos de celular pesan varios MB. Antes se metían crudas al DOM y
+        // al PDF, así que el informe terminaba en decenas de MB y el navegador
+        // del técnico se quedaba sin memoria. Aquí se reescalan y recomprimen
+        // una sola vez, al momento de seleccionarlas.
+        // ============================================================
+        const IMG_MAX_PX = 1600;     // lado largo máximo
+        const IMG_CALIDAD = 0.72;    // calidad JPEG
+
+        function pesoLegible(dataUrl) {
+            const base64 = (dataUrl.split(',')[1] || '');
+            const bytes = Math.round(base64.length * 3 / 4);
+            return bytes < 1024 * 1024
+                ? Math.max(1, Math.round(bytes / 1024)) + ' KB'
+                : (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function comprimirImagen(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onerror = () => reject(new Error('Archivo de imagen no válido'));
+                    img.onload = () => {
+                        const escala = Math.min(1, IMG_MAX_PX / Math.max(img.width, img.height));
+                        const w = Math.max(1, Math.round(img.width * escala));
+                        const h = Math.max(1, Math.round(img.height * escala));
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        // Fondo blanco: los PNG con transparencia salen negros en JPEG.
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, w, h);
+                        ctx.drawImage(img, 0, 0, w, h);
+
+                        resolve({ data: canvas.toDataURL('image/jpeg', IMG_CALIDAD), width: w, height: h });
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Punto único por el que entran TODAS las imágenes de la aplicación.
+        async function agregarImagenes(fileList, previewContainer) {
+            const archivos = Array.from(fileList || []).filter(f => f.type.startsWith('image/'));
+            if (archivos.length === 0) return;
+
+            const template = document.getElementById('template-image-preview');
+            let fallidas = 0;
+
+            for (const file of archivos) {
+                try {
+                    const comp = await comprimirImagen(file);
+                    const clone = template.content.cloneNode(true);
+                    const img = clone.querySelector('img');
+                    const item = clone.querySelector('.image-preview-item');
+                    const peso = clone.querySelector('.image-peso');
+
+                    img.src = comp.data;
+                    // Guardadas aquí, el PDF no tiene que volver a cargar la imagen.
+                    img.dataset.w = comp.width;
+                    img.dataset.h = comp.height;
+                    item.classList.add(comp.width >= comp.height ? 'landscape' : 'portrait');
+                    item.draggable = true;
+                    if (peso) peso.textContent = pesoLegible(comp.data);
+
+                    previewContainer.appendChild(clone);
+                    totalImages++;
+                    enableImageDragAndDrop(previewContainer);
+                } catch (err) {
+                    console.error('Error procesando imagen:', err);
+                    fallidas++;
+                }
+            }
+
+            actualizarResumen();
+            if (fallidas > 0) {
+                showMessage(fallidas + ' imagen(es) no se pudieron procesar.', 'warning');
+            }
+        }
+
+        // ============================================================
+        // DICTADO POR VOZ
+        // Usa el reconocimiento de voz del navegador (Chrome/Edge en Android y
+        // escritorio). Si no está disponible se oculta el botón y el técnico
+        // escribe normal.
+        // ============================================================
+        const RecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const VOZ_DISPONIBLE = !!RecognitionAPI;
+        let dictadoActivo = null; // solo un micrófono encendido a la vez
+
+        function detenerDictadoActivo() {
+            if (dictadoActivo) dictadoActivo.detener();
+        }
+
+        function crearDictado(textarea, boton, estado, interim) {
+            let reconocimiento = null;
+            let escuchando = false;
+            let detenidoPorUsuario = false;
+
+            const pintar = (on) => {
+                escuchando = on;
+                boton.classList.toggle('grabando', on);
+                boton.innerHTML = on
+                    ? '<i class="fas fa-stop"></i> Detener'
+                    : '<i class="fas fa-microphone"></i> Dictar';
+                interim.classList.toggle('activo', on);
+                if (!on) interim.textContent = '';
+            };
+
+            const api = {
+                detener() {
+                    detenidoPorUsuario = true;
+                    if (reconocimiento) { try { reconocimiento.stop(); } catch (e) {} }
+                    pintar(false);
+                    if (dictadoActivo === api) dictadoActivo = null;
+                }
+            };
+
+            const arrancar = () => {
+                detenerDictadoActivo();
+                detenidoPorUsuario = false;
+
+                reconocimiento = new RecognitionAPI();
+                reconocimiento.lang = 'es-CO';
+                reconocimiento.continuous = true;
+                reconocimiento.interimResults = true;
+
+                reconocimiento.onresult = (evento) => {
+                    let parcial = '';
+                    for (let i = evento.resultIndex; i < evento.results.length; i++) {
+                        const texto = evento.results[i][0].transcript;
+                        if (evento.results[i].isFinal) {
+                            const previo = textarea.value.trimEnd();
+                            const sep = previo === '' ? '' : (/[.!?]$/.test(previo) ? ' ' : '. ');
+                            textarea.value = previo + sep + texto.trim();
+                            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                        } else {
+                            parcial += texto;
+                        }
+                    }
+                    interim.textContent = parcial ? '… ' + parcial : 'Escuchando…';
+                };
+
+                reconocimiento.onerror = (evento) => {
+                    if (evento.error === 'no-speech' || evento.error === 'aborted') return;
+                    const mensajes = {
+                        'not-allowed': 'Permiso de micrófono denegado. Actívalo en los ajustes del navegador.',
+                        'service-not-allowed': 'El navegador bloqueó el micrófono. Revisa los permisos del sitio.',
+                        'audio-capture': 'No se detectó ningún micrófono.',
+                        'network': 'Sin conexión: el dictado necesita internet.'
+                    };
+                    estado.textContent = mensajes[evento.error] || ('Error de dictado: ' + evento.error);
+                    estado.className = 'voz-estado error';
+                    detenidoPorUsuario = true;
+                };
+
+                // Chrome corta la escucha tras unos segundos de silencio. Si el
+                // técnico no pulsó "Detener", se vuelve a levantar sola.
+                reconocimiento.onend = () => {
+                    if (detenidoPorUsuario) { pintar(false); return; }
+                    try { reconocimiento.start(); } catch (e) { pintar(false); }
+                };
+
+                try {
+                    reconocimiento.start();
+                    dictadoActivo = api;
+                    pintar(true);
+                    estado.textContent = 'Habla con normalidad. El texto se va escribiendo solo.';
+                    estado.className = 'voz-estado';
+                } catch (e) {
+                    estado.textContent = 'No se pudo iniciar el dictado.';
+                    estado.className = 'voz-estado error';
+                }
+            };
+
+            boton.addEventListener('click', () => {
+                if (escuchando) api.detener(); else arrancar();
+            });
+
+            return api;
+        }
+
+        // ============================================================
+        // BOTÓN "MEJORAR"
+        // Primero intenta la función de IA publicada en Netlify. Si no está
+        // disponible (o falla) usa el corrector local, que siempre funciona y
+        // no necesita internet.
+        // ============================================================
+        const ENDPOINT_IA = '/.netlify/functions/mejorar-texto';
+        let iaDisponible = null; // null = sin probar, false = no está publicada
+
+        async function mejorarConIA(texto, contexto) {
+            if (iaDisponible === false) return null;
+            try {
+                const respuesta = await fetch(ENDPOINT_IA, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ texto: texto, contexto: contexto })
+                });
+                if (!respuesta.ok) { iaDisponible = false; return null; }
+                const datos = await respuesta.json();
+                if (!datos || !datos.texto) { iaDisponible = false; return null; }
+                iaDisponible = true;
+                return String(datos.texto).trim();
+            } catch (e) {
+                iaDisponible = false;
+                return null;
+            }
+        }
+
+        // ---------- Corrector local (funciona siempre, sin internet) ----------
+        const MULETILLAS = [
+            'este', 'eh', 'ehh', 'em', 'mmm', 'o sea', 'osea', 'digamos', 'pues',
+            'bueno', 'listo', 'a ver', 'vale', 'como que', 'tipo'
+        ];
+
+        // Primera persona (yo / nosotros) -> forma impersonal con "se".
+        //
+        // Cada entrada es [formas dictadas, impersonal singular, impersonal plural].
+        // El plural viene escrito a mano porque no se puede deducir de la forma
+        // singular: "limpió" es de limpiar (limpiaron) y "midió" es de medir
+        // (midieron), y las dos terminan igual.
+        const VERBOS_IMPERSONALES = [
+            ['realic[eé]|realizamos|hice|hicimos', 'realizó', 'realizaron'],
+            ['revis[eé]|revisamos', 'revisó', 'revisaron'],
+            ['inspeccion[eé]|inspeccionamos', 'inspeccionó', 'inspeccionaron'],
+            ['verifi(?:qu[eé])|verificamos', 'verificó', 'verificaron'],
+            ['limpi[eé]|limpiamos', 'limpió', 'limpiaron'],
+            ['lav[eé]|lavamos', 'lavó', 'lavaron'],
+            ['med[ií]|medimos', 'midió', 'midieron'],
+            ['tom[eé]|tomamos', 'tomó', 'tomaron'],
+            ['cambi[eé]|cambiamos', 'cambió', 'cambiaron'],
+            ['reempla(?:c[eé]|zamos)', 'reemplazó', 'reemplazaron'],
+            ['instal[eé]|instalamos', 'instaló', 'instalaron'],
+            ['ajust[eé]|ajustamos', 'ajustó', 'ajustaron'],
+            ['apret[eé]|apretamos', 'apretó', 'apretaron'],
+            ['pint[eé]|pintamos', 'pintó', 'pintaron'],
+            ['prob[eé]|probamos', 'probó', 'probaron'],
+            ['encontr[eé]|encontramos', 'encontró', 'encontraron'],
+            ['detect[eé]|detectamos', 'detectó', 'detectaron'],
+            ['observ[eé]|observamos', 'observó', 'observaron'],
+            ['not[eé]|notamos|vi|vimos', 'evidenció', 'evidenciaron'],
+            ['arregl[eé]|arreglamos|repar[eé]|reparamos', 'corrigió', 'corrigieron'],
+            ['desmont[eé]|desmontamos', 'desmontó', 'desmontaron'],
+            ['conect[eé]|conectamos', 'conectó', 'conectaron'],
+            ['desconect[eé]|desconectamos', 'desconectó', 'desconectaron'],
+            ['retir[eé]|retiramos|quit[eé]|quitamos', 'retiró', 'retiraron'],
+            ['coloqu[eé]|colocamos|pusimos', 'instaló', 'instalaron'],
+            ['asegur[eé]|aseguramos|garantiz[aá]mos|garantizamos', 'aseguró', 'aseguraron'],
+            ['apli(?:qu[eé]|camos)', 'aplicó', 'aplicaron'],
+            ['sa(?:qu[eé]|camos)|extraj(?:e|imos)', 'extrajo', 'extrajeron'],
+            ['ech[eé]|echamos', 'aplicó', 'aplicaron'],
+            ['us[eé]|usamos|utilic[eé]|utilizamos', 'utilizó', 'utilizaron'],
+            ['desmont[eé]|desarm[eé]|desarmamos', 'desmontó', 'desmontaron'],
+            ['sopl[eé]|soplamos|aspir[eé]|aspiramos', 'aspiró', 'aspiraron']
+        ];
+
+        // Ojo con el final de palabra: en JavaScript \b no reconoce las vocales
+        // acentuadas como parte de la palabra, asi que "tomé\b" nunca casaba.
+        // Se comprueba a mano que no siga otra letra.
+        const FIN_PALABRA = '(?![a-záéíóúñ])';
+        const DETERMINANTE_PLURAL =
+            '(?=(?:los|las|unos|unas|varios|varias|algunos|algunas|todos|todas|ambos|ambas)\\b)';
+
+        const REGLAS_VERBOS = VERBOS_IMPERSONALES.map(v => ({
+            deteccion: new RegExp('\\b(?:' + v[0] + ')' + FIN_PALABRA, 'gi'),
+            singular: 'se ' + v[1],
+            // "se limpió los módulos" -> "se limpiaron los módulos"
+            concordancia: new RegExp('\\bse ' + v[1] + '\\s+' + DETERMINANTE_PLURAL, 'gi'),
+            plural: 'se ' + v[2] + ' '
+        }));
+
+        // Lenguaje de campo -> vocabulario técnico del informe.
+        // Determinantes femeninos que hay que pasar a masculino cuando
+        // "placa" se convierte en "módulo": la/una/esta/toda/otra/...
+        const DET_FEMENINO = '(l|un|est|es|aquell|tod|otr|much|poc|vari|algun|ningun|dich|mism|amb)';
+
+        // Sustituciones de vocabulario.
+        //
+        // IMPORTANTE: aqui solo pueden entrar cambios que NO puedan romper la
+        // gramatica, porque esto es una busqueda y reemplazo ciega: no sabe si
+        // una palabra funciona como adjetivo o como sustantivo. Cambiar
+        // "sucio" por "con acumulacion de suciedad" convirtio un dictado real
+        // ("todo el sucio que habia en los paneles") en "todo el con
+        // acumulacion de suciedad". Ese tipo de reglas se quitaron.
+        //
+        // La redaccion de verdad la hace la IA; esto es solo la red de
+        // seguridad para cuando no hay conexion.
+        //
+        // Regla para añadir algo nuevo: sustantivo por sustantivo del mismo
+        // genero y numero, o expresion fija por expresion fija equivalente.
+        const TERMINOS = [
+            // Sustantivo -> sustantivo, corrigiendo el determinante porque
+            // "placa" es femenino y "módulo" masculino.
+            [new RegExp('\\b' + DET_FEMENINO + 'as\\s+placas\\b', 'gi'),
+             (m, det) => det + 'os módulos fotovoltaicos'],
+            [new RegExp('\\b' + DET_FEMENINO + 'a\\s+placa\\b', 'gi'),
+             (m, det) => det + 'o módulo fotovoltaico'],
+            [/\bplacas\b/gi, 'módulos fotovoltaicos'],
+            [/\bplaca\b/gi, 'módulo fotovoltaico'],
+
+            // Mismo genero y numero, sin tocar el determinante.
+            [/\bpaneles solares\b/gi, 'módulos fotovoltaicos'],
+            [/\bpanel solar\b/gi, 'módulo fotovoltaico'],
+            [/\bpaneles\b/gi, 'módulos fotovoltaicos'],
+            [/\bpanel\b/gi, 'módulo fotovoltaico'],
+            [/\bbreakers\b/gi, 'interruptores termomagnéticos'],
+            [/\bbreaker\b/gi, 'interruptor termomagnético'],
+
+            // Verbo por verbo e expresion fija por expresion fija.
+            [/\b(?:chequ(?:e[eé]|ear)|checar)\b/gi, 'verificar'],
+            [/\bhay que\b/gi, 'se requiere'],
+            [/\ba través de\b/gi, 'mediante'],
+            [/\bde esta manera\b/gi, 'de esta forma'],
+            [/\bno sirven\b/gi, 'se encuentran fuera de servicio'],
+            [/\bno sirve\b/gi, 'se encuentra fuera de servicio']
+        ];
+
+        const UNIDADES = [
+            [/(\d+(?:[.,]\d+)?)\s*(?:voltios|volts?)\b/gi, '$1 V'],
+            [/(\d+(?:[.,]\d+)?)\s*(?:amperios|amperes|amps?)\b/gi, '$1 A'],
+            [/(\d+(?:[.,]\d+)?)\s*(?:kilovatios|kilowatts?|kilo vatios)\b/gi, '$1 kW'],
+            [/(\d+(?:[.,]\d+)?)\s*(?:vatios|watts?)\b/gi, '$1 W'],
+            [/(\d+(?:[.,]\d+)?)\s*(?:ohmios|ohms?)\b/gi, '$1 Ω'],
+            [/(\d+(?:[.,]\d+)?)\s*(?:por ciento|porciento)\b/gi, '$1 %'],
+            [/(\d+(?:[.,]\d+)?)\s*(?:grados cent[ií]grados|grados celsius)\b/gi, '$1 °C'],
+            [/(\d+(?:[.,]\d+)?)\s*metros\b/gi, '$1 m'],
+            [/(\d+(?:[.,]\d+)?)\s*mil[ií]metros\b/gi, '$1 mm']
+        ];
+
+        function mejorarLocal(texto) {
+            let t = ' ' + texto.replace(/\s+/g, ' ').trim() + ' ';
+
+            // 1. Fuera las muletillas del dictado
+            MULETILLAS.forEach(m => {
+                const re = new RegExp('(^|[\\s,.;:])' + m.replace(/ /g, '\\s+') + '(?=[\\s,.;:]|$)', 'gi');
+                t = t.replace(re, '$1');
+            });
+
+            // 2. Palabras repetidas seguidas ("el el módulo")
+            t = t.replace(/\b(\w+)(\s+\1\b)+/gi, '$1');
+
+            // 3. Primera persona -> impersonal, vocabulario técnico y unidades
+            REGLAS_VERBOS.forEach(r => { t = t.replace(r.deteccion, r.singular); });
+            TERMINOS.forEach(par => { t = t.replace(par[0], par[1]); });
+            UNIDADES.forEach(par => { t = t.replace(par[0], par[1]); });
+
+            // 4. El sujeto sobra al pasar a impersonal: "nosotros se limpió" -> "se limpió"
+            t = t.replace(/\b(yo|nosotros|nosotras)\s+(?=se\b)/gi, '');
+
+            // El verbo impersonal concuerda con el sujeto plural
+            REGLAS_VERBOS.forEach(r => { t = t.replace(r.concordancia, r.plural); });
+
+            // 5. Cortar el discurso corrido en frases
+            t = t.replace(/\s+(y luego|luego|y despu[eé]s|despu[eé]s|entonces|adem[aá]s)\s+/gi,
+                          function (m, p) { return '. ' + p.charAt(0).toUpperCase() + p.slice(1) + ' '; });
+            t = t.replace(/\.\s*(?:Y luego|Y despu[eé]s|Luego|Despu[eé]s)\s+/g, '. Posteriormente ');
+            t = t.replace(/\.\s*Entonces\s+/g, '. En consecuencia ');
+
+            // 6. Puntuación y espacios
+            t = t.replace(/\s+([,.;:%])/g, '$1');
+            t = t.replace(/([,.;:])(?=[^\s\d])/g, '$1 ');
+            t = t.replace(/\.{2,}/g, '.');
+            t = t.replace(/\s{2,}/g, ' ').trim();
+
+            if (t === '') return '';
+            if (!/[.!?]$/.test(t)) t += '.';
+
+            // 7. Mayúscula al inicio de cada frase
+            t = t.replace(/(^|[.!?]\s+)([a-záéíóúñ])/g,
+                          function (m, pre, letra) { return pre + letra.toUpperCase(); });
+
+            return t;
+        }
+
+        // ============================================================
+        // BARRA DE VOZ: se inyecta bajo cada textarea marcada con data-voz
+        // ============================================================
+        function inicializarVoz(raiz) {
+            const campos = (raiz || document).querySelectorAll('textarea[data-voz]:not([data-voz-lista])');
+
+            campos.forEach(textarea => {
+                textarea.setAttribute('data-voz-lista', '1');
+                const etiqueta = textarea.getAttribute('data-voz') || 'Texto';
+
+                const barra = document.createElement('div');
+                barra.className = 'voz-toolbar';
+                barra.innerHTML =
+                    '<button type="button" class="btn-voz btn-dictar"><i class="fas fa-microphone"></i> Dictar</button>' +
+                    '<button type="button" class="btn-voz btn-mejorar"><i class="fas fa-wand-magic-sparkles"></i> Mejorar</button>' +
+                    '<button type="button" class="btn-voz btn-deshacer" style="display:none;"><i class="fas fa-rotate-left"></i> Deshacer</button>' +
+                    '<div class="voz-estado"></div>';
+
+                const interim = document.createElement('div');
+                interim.className = 'voz-interim';
+
+                textarea.insertAdjacentElement('afterend', interim);
+                interim.insertAdjacentElement('afterend', barra);
+
+                const btnDictar = barra.querySelector('.btn-dictar');
+                const btnMejorar = barra.querySelector('.btn-mejorar');
+                const btnDeshacer = barra.querySelector('.btn-deshacer');
+                const estado = barra.querySelector('.voz-estado');
+
+                if (VOZ_DISPONIBLE) {
+                    crearDictado(textarea, btnDictar, estado, interim);
+                } else {
+                    btnDictar.style.display = 'none';
+                    estado.textContent = 'El dictado por voz necesita Chrome o Edge.';
+                }
+
+                let anterior = null;
+
+                btnMejorar.addEventListener('click', async () => {
+                    const original = textarea.value.trim();
+                    if (!original) {
+                        estado.textContent = 'Escribe o dicta algo primero.';
+                        estado.className = 'voz-estado error';
+                        return;
+                    }
+
+                    detenerDictadoActivo();
+                    btnMejorar.classList.add('trabajando');
+                    btnMejorar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mejorando…';
+                    estado.textContent = 'Ordenando el texto…';
+                    estado.className = 'voz-estado';
+
+                    let resultado = await mejorarConIA(original, etiqueta);
+                    let conIA = !!resultado;
+                    if (!resultado) resultado = mejorarLocal(original);
+
+                    btnMejorar.classList.remove('trabajando');
+                    btnMejorar.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Mejorar';
+
+                    if (!resultado || resultado === original) {
+                        estado.textContent = conIA
+                            ? 'El texto ya estaba bien redactado.'
+                            : 'Sin conexión con la IA: no había nada que limpiar.';
+                        estado.className = 'voz-estado ok';
+                        return;
+                    }
+
+                    anterior = original;
+                    textarea.value = resultado;
+                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    btnDeshacer.style.display = '';
+                    // Se dice de dónde salió el texto: la redacción de verdad la
+                    // hace la IA, la versión local solo hace limpieza básica.
+                    estado.textContent = conIA
+                        ? 'Redactado con IA. Revísalo antes de generar el PDF.'
+                        : 'Sin conexión con la IA: solo se aplicó limpieza básica. Revisa la redacción.';
+                    estado.className = 'voz-estado ok';
+                });
+
+                btnDeshacer.addEventListener('click', () => {
+                    if (anterior === null) return;
+                    textarea.value = anterior;
+                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    anterior = null;
+                    btnDeshacer.style.display = 'none';
+                    estado.textContent = 'Se restauró el texto original.';
+                    estado.className = 'voz-estado';
+                });
+            });
+        }
+
+        // ============================================================
+        // RESUMEN DE LO QUE LLEVA EL INFORME
+        // ============================================================
+        function actualizarResumen() {
+            const chips = document.getElementById('resumen-chips');
+            if (!chips) return;
+
+            const cuenta = (sel) => document.querySelectorAll(sel).length;
+
+            const datos = [
+                { icono: 'fa-tools', n: cuenta('#selected-activities-container .selected-activity-item'), etiqueta: 'actividades' },
+                { icono: 'fa-chart-line', n: cuenta('#dynamic-resultados-container .dynamic-item'), etiqueta: 'resultados' },
+                { icono: 'fa-triangle-exclamation', n: cuenta('#dynamic-anomalias-container .dynamic-item'), etiqueta: 'anomalías' },
+                { icono: 'fa-lightbulb', n: cuenta('#dynamic-recomendaciones-container .dynamic-item'), etiqueta: 'recomendaciones' },
+                { icono: 'fa-image', n: cuenta('#report-page .image-preview-item'), etiqueta: 'fotos' }
+            ];
+
+            chips.innerHTML = datos.map(d =>
+                '<span class="chip' + (d.n === 0 ? ' vacio' : '') + '">' +
+                '<i class="fas ' + d.icono + '"></i> ' + d.n + ' ' + d.etiqueta + '</span>'
+            ).join('');
+        }
+
+        // ============================================================
+        // BORRADOR AUTOMÁTICO
+        // Guarda el texto del informe en el navegador para que una recarga o un
+        // cierre accidental no borre el trabajo. Las fotos NO se guardan
+        // (ocuparían demasiado), así que hay que volver a cargarlas.
+        // ============================================================
+        const CLAVE_BORRADOR = 'oym-borrador-v1';
+        let guardadoPendiente = null;
+
+        function recogerBorrador() {
+            const val = (id) => (document.getElementById(id) || {}).value || '';
+
+            const actividades = Array.from(
+                document.querySelectorAll('#selected-activities-container .selected-activity-item')
+            ).map(el => ({
+                tipo: el.getAttribute('data-activity-type'),
+                id: el.getAttribute('data-activity-id'),
+                titulo: (el.querySelector('.custom-activity-title') || {}).value || '',
+                notas: (el.querySelector('.activity-notes') || {}).value || ''
+            }));
+
+            const textos = (contenedor, clase) => Array.from(
+                document.querySelectorAll('#' + contenedor + ' .dynamic-item')
+            ).map(el => (el.querySelector(clase) || {}).value || '');
+
+            return {
+                v: 1,
+                guardado: Date.now(),
+                proyectoNombre: val('proyectoNombre'),
+                ubicacion: val('ubicacion'),
+                fecha: val('fecha'),
+                tecnicoNombre: val('tecnicoNombre'),
+                conclusion: val('conclusion'),
+                actividades: actividades,
+                resultados: textos('dynamic-resultados-container', '.resultado-text'),
+                anomalias: textos('dynamic-anomalias-container', '.anomalia-text'),
+                recomendaciones: textos('dynamic-recomendaciones-container', '.recomendacion-text')
+            };
+        }
+
+        function guardarBorrador() {
+            clearTimeout(guardadoPendiente);
+            guardadoPendiente = setTimeout(() => {
+                try {
+                    localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(recogerBorrador()));
+                    const aviso = document.getElementById('aviso-guardado');
+                    if (aviso) aviso.textContent = 'Borrador guardado en este dispositivo (las fotos no se guardan).';
+                } catch (e) {
+                    /* modo privado o almacenamiento lleno: no es crítico */
+                }
+            }, 600);
+        }
+
+        function borrarBorrador() {
+            try { localStorage.removeItem(CLAVE_BORRADOR); } catch (e) {}
+            const aviso = document.getElementById('aviso-guardado');
+            if (aviso) aviso.textContent = '';
+        }
+
+        function restaurarBorrador() {
+            let b;
+            try {
+                const crudo = localStorage.getItem(CLAVE_BORRADOR);
+                if (!crudo) return;
+                b = JSON.parse(crudo);
+            } catch (e) { return; }
+
+            if (!b || b.v !== 1) return;
+            if ((Date.now() - (b.guardado || 0)) / 86400000 > 14) { borrarBorrador(); return; }
+
+            const hayAlgo = b.proyectoNombre || b.conclusion ||
+                (b.actividades || []).length || (b.resultados || []).length ||
+                (b.anomalias || []).length || (b.recomendaciones || []).length;
+            if (!hayAlgo) return;
+
+            const nombre = b.proyectoNombre || 'sin nombre';
+            if (!confirm('Hay un informe sin terminar («' + nombre + '»).\n\n' +
+                         '¿Quieres retomarlo?\n' +
+                         'Se recupera todo el texto; las fotos hay que volver a cargarlas.')) {
+                borrarBorrador();
+                return;
+            }
+
+            const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+            set('proyectoNombre', b.proyectoNombre);
+            set('ubicacion', b.ubicacion);
+            set('fecha', b.fecha);
+            set('tecnicoNombre', b.tecnicoNombre);
+            set('conclusion', b.conclusion);
+
+            (b.actividades || []).forEach(a => {
+                if (a.tipo === 'custom') {
+                    const el = crearActividadPersonalizada();
+                    if (a.titulo) {
+                        el.querySelector('.custom-activity-title').value = a.titulo;
+                        el.querySelector('.selected-activity-title').textContent = a.titulo;
+                    }
+                    if (a.notas) el.querySelector('.activity-notes').value = a.notas;
+                } else {
+                    addSelectedActivity(a.tipo, a.id);
+                    const el = document.querySelector(
+                        '#selected-activities-container .selected-activity-item[data-activity-id="' + a.id + '"]');
+                    const notas = el && el.querySelector('.activity-notes');
+                    if (notas && a.notas) notas.value = a.notas;
+                }
+            });
+
+            const restaurarLista = (lista, botonId, contenedorId, clase) => {
+                (lista || []).forEach(texto => {
+                    document.getElementById(botonId).click();
+                    const items = document.querySelectorAll('#' + contenedorId + ' .dynamic-item');
+                    const ultimo = items[items.length - 1];
+                    const campo = ultimo && ultimo.querySelector(clase);
+                    if (campo) campo.value = texto;
+                });
+            };
+            restaurarLista(b.resultados, 'add-resultado-btn', 'dynamic-resultados-container', '.resultado-text');
+            restaurarLista(b.anomalias, 'add-anomalia-btn', 'dynamic-anomalias-container', '.anomalia-text');
+            restaurarLista(b.recomendaciones, 'add-recomendacion-btn', 'dynamic-recomendaciones-container', '.recomendacion-text');
+
+            actualizarResumen();
+            showMessage('Borrador recuperado. Vuelve a cargar las fotos.', 'success');
+        }
+
+        // Variables globales
+        let totalImages = 0;
+        let imagesProcessed = 0;
+        let selectedActivitiesCount = 0;
+        let selectedActivities = [];
+
+        // Funciones de utilidad
+        const showPage = (pageId) => {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        };
+
+        const updateProgress = (processed, total) => {
+            const percentage = Math.round((processed / total) * 100);
+            document.getElementById('progress-fill').style.width = percentage + '%';
+            document.getElementById('progress-text').textContent = percentage + '% completado';
+        };
+
+        const updateActivityCounter = () => {
+            document.getElementById('activity-counter').textContent = selectedActivitiesCount;
+
+            // Mostrar/ocultar mensaje de "no actividades"
+            const noActivitiesMsg = document.getElementById('no-activities-message');
+            const container = document.getElementById('selected-activities-container');
+
+            if (selectedActivitiesCount === 0) {
+                noActivitiesMsg.style.display = 'block';
+            } else {
+                noActivitiesMsg.style.display = 'none';
+            }
+        };
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            // Fecha de hoy por defecto
+            document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+
+            const anio = document.getElementById('anio-actual');
+            if (anio) anio.textContent = new Date().getFullYear();
+
+            initAccordions();
+            loadActivitiesIntoSelectors();
+            initEvents();
+
+            // Dictado y boton "Mejorar" en los campos que ya estan en la pagina
+            inicializarVoz(document);
+
+            // Autoguardado: cualquier cambio de texto guarda el borrador
+            const pagina = document.getElementById('report-page');
+            pagina.addEventListener('input', () => {
+                actualizarResumen();
+                guardarBorrador();
+            });
+
+            actualizarResumen();
+            restaurarBorrador();
+        });
+
+        function initAccordions() {
+            const sectionHeaders = document.querySelectorAll('.section-header');
+            sectionHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    // Cerrar todas las otras secciones
+                    sectionHeaders.forEach(otherHeader => {
+                        if (otherHeader !== header && otherHeader.classList.contains('active')) {
+                            otherHeader.classList.remove('active');
+                            otherHeader.nextElementSibling.classList.remove('active');
+                        }
+                    });
+
+                    // Abrir/Cerrar la sección actual
+                    const content = header.nextElementSibling;
+                    header.classList.toggle('active');
+                    content.classList.toggle('active');
+                });
+            });
+        }
+
+        function loadActivitiesIntoSelectors() {
+            // Cargar actividades preventivas
+            const preventiveSelect = document.getElementById('preventive-activities-select');
+            maintenanceActivities.preventive.forEach(activity => {
+                const option = document.createElement('option');
+                option.value = activity.id;
+                option.textContent = activity.title;
+                preventiveSelect.appendChild(option);
+            });
+
+            // Cargar actividades correctivas
+            const correctiveSelect = document.getElementById('corrective-activities-select');
+            maintenanceActivities.corrective.forEach(activity => {
+                const option = document.createElement('option');
+                option.value = activity.id;
+                option.textContent = activity.title;
+                correctiveSelect.appendChild(option);
+            });
+        }
+
+        function addSelectedActivity(type, activityId) {
+            // Encontrar la actividad en los datos
+            let activityData;
+            if (type === 'preventive') {
+                activityData = maintenanceActivities.preventive.find(a => a.id === activityId);
+            } else if (type === 'corrective') {
+                activityData = maintenanceActivities.corrective.find(a => a.id === activityId);
+            }
+
+            if (!activityData) return;
+
+            // Verificar si ya está seleccionada
+            if (selectedActivities.some(a => a.id === activityId)) {
+                showMessage('Esta actividad ya ha sido agregada.', 'warning');
+                return;
+            }
+
+            // Crear elemento de actividad seleccionada
+            const template = document.getElementById('template-selected-activity');
+            const clone = template.content.cloneNode(true);
+            const activityElement = clone.querySelector('.selected-activity-item');
+
+            activityElement.setAttribute('data-activity-type', type);
+            activityElement.setAttribute('data-activity-id', activityId);
+            activityElement.querySelector('.selected-activity-title').textContent = activityData.title;
+            activityElement.querySelector('.activity-description').textContent = activityData.description;
+
+            // Ocultar la sección de imágenes normales si es "Toma de medidas de strings"
+            if (activityData.title === "Toma de medidas de strings") {
+                const imageSection = activityElement.querySelector('.form-group:has(.image-upload)');
+                if (imageSection) {
+                    imageSection.style.display = 'none';
+                }
+            }
+
+            // Agregar contenido especial para "Toma de medidas de strings"
+            if (activityData.title === "Toma de medidas de strings") {
+                const notasDiv = activityElement.querySelector('.form-group');
+                const inversorSection = document.createElement('div');
+                inversorSection.className = 'form-group inversor-section';
+                inversorSection.style.marginTop = '1rem';
+                inversorSection.style.padding = '1rem';
+                inversorSection.style.backgroundColor = '#f0f4f8';
+                inversorSection.style.borderRadius = '0.5rem';
+                inversorSection.style.borderLeft = '4px solid var(--primary)';
+
+                inversorSection.innerHTML = `
+                    <label style="font-weight: 600; color: var(--primary); margin-bottom: 1rem; display: block;">Medidas por Inversor</label>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center;">
+                        <div>
+                            <label style="font-size: 0.875rem; color: var(--dark);">Cantidad de inversores:</label>
+                            <input type="number" class="inversor-count" value="1" min="1" max="20" style="width: 80px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.875rem;">
+                        </div>
+                    </div>
+                    <div class="inversores-container"></div>
+                `;
+
+                notasDiv.parentNode.insertBefore(inversorSection, notasDiv.nextSibling);
+
+                // Agregar evento al input de cantidad de inversores
+                const countInput = inversorSection.querySelector('.inversor-count');
+                const container = inversorSection.querySelector('.inversores-container');
+
+                const updateInversores = () => {
+                    const cantidad = parseInt(countInput.value) || 1;
+                    container.innerHTML = '';
+
+                    for (let i = 1; i <= cantidad; i++) {
+                        const inversorGroup = document.createElement('div');
+                        inversorGroup.className = 'inversor-group';
+                        inversorGroup.style.marginBottom = '1.5rem';
+
+                        inversorGroup.innerHTML = `
+                            <label class="inversor-title" style="font-weight: 600; color: var(--dark); margin-bottom: 1rem; display: block;">Inversor ${i}</label>
+                            <div class="form-group">
+                                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                                    <div class="image-upload-inversor" style="flex: 1; cursor: pointer;">
+                                        <label class="image-upload-label" style="cursor: pointer;">
+                                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                            <span style="color: var(--gray);">Haz clic para agregar imágenes</span>
+                                        </label>
+                                        <input type="file" multiple accept="image/*" class="inversor-image-input" style="display: none;">
+                                    </div>
+                                    <div class="filas-control">
+                                        <label>Por fila:</label>
+                                        <input type="number" class="inversor-images-per-row" value="2" min="1" max="4" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
+                                    </div>
+                                </div>
+                                <div class="inversor-image-preview-container" style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;"></div>
+                            </div>
+                        `;
+
+                        container.appendChild(inversorGroup);
+
+                        // Configurar eventos para este inversor
+                        const uploadDiv = inversorGroup.querySelector('.image-upload-inversor');
+                        const fileInput = inversorGroup.querySelector('.inversor-image-input');
+                        const previewContainer = inversorGroup.querySelector('.inversor-image-preview-container');
+
+                        uploadDiv.addEventListener('click', () => {
+                            fileInput.click();
+                        });
+
+                        fileInput.addEventListener('change', async (e) => {
+                            await agregarImagenes(e.target.files, previewContainer);
+                            e.target.value = ''; // permite volver a elegir la misma foto
+                        });
+                    }
+                };
+
+                countInput.addEventListener('change', updateInversores);
+                updateInversores(); // Crear el primer inversor por defecto
+            }
+
+            // Añadir al contenedor
+            const container = document.getElementById('selected-activities-container');
+            container.appendChild(activityElement);
+
+            // Añadir a la lista de seleccionadas
+            selectedActivities.push({
+                id: activityId,
+                type: type,
+                title: activityData.title,
+                description: activityData.description,
+                element: activityElement
+            });
+
+            // Actualizar contador
+            selectedActivitiesCount++;
+            updateActivityCounter();
+
+            // Inicializar eventos para esta actividad
+            initActivityEvents(activityElement);
+
+            // Limpiar el selector
+            if (type === 'preventive') {
+                document.getElementById('preventive-activities-select').value = '';
+            } else {
+                document.getElementById('corrective-activities-select').value = '';
+            }
+
+            showMessage(`Actividad "${activityData.title}" agregada.`, 'success');
+        }
+
+        function initActivityEvents(activityElement) {
+            // Dictado y boton "Mejorar" en las notas de la actividad
+            inicializarVoz(activityElement);
+
+            // Botón de eliminar
+            const removeBtn = activityElement.querySelector('.remove-activity-btn');
+            removeBtn.addEventListener('click', function() {
+                const activityId = activityElement.getAttribute('data-activity-id');
+                const activityType = activityElement.getAttribute('data-activity-type');
+
+                // Remover de la lista
+                selectedActivities = selectedActivities.filter(a => a.id !== activityId);
+                selectedActivitiesCount--;
+
+                // Remover elemento
+                activityElement.remove();
+                actualizarResumen();
+                guardarBorrador();
+
+                // Actualizar contador
+                updateActivityCounter();
+
+                showMessage('Actividad eliminada.', 'info');
+            });
+
+            // Subida de imágenes
+            const imageUpload = activityElement.querySelector('.image-upload');
+            const fileInput = activityElement.querySelector('input[type="file"]');
+            const previewContainer = activityElement.querySelector('.image-preview-container');
+
+            imageUpload.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', async (e) => {
+                await agregarImagenes(e.target.files, previewContainer);
+                e.target.value = ''; // permite volver a elegir la misma foto
+            });
+
+            // Evento para el input de filas (imágenes por fila)
+            const imagesPerRowInput = activityElement.querySelector('.activity-images-per-row');
+            if (imagesPerRowInput) {
+                // Solo escuchar cambios, sin guardar en caché
+                imagesPerRowInput.addEventListener('change', function() {
+                    // El valor se usa directamente en el PDF
+                });
+            }
+        }
+
+        // Quitar una foto: un solo listener para toda la página.
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest && e.target.closest('.remove-image');
+            if (!btn) return;
+            const item = btn.closest('.image-preview-item');
+            if (!item) return;
+            item.remove();
+            totalImages = Math.max(0, totalImages - 1);
+            actualizarResumen();
+            guardarBorrador();
+        });
+
+        function showMessage(text, type) {
+            // Crear mensaje temporal
+            const message = document.createElement('div');
+            message.textContent = text;
+            message.style.position = 'fixed';
+            message.style.top = '20px';
+            message.style.right = '20px';
+            message.style.padding = '12px 16px';
+            message.style.borderRadius = 'var(--radius-sm)';
+            message.style.fontWeight = '500';
+            message.style.zIndex = '1000';
+            message.style.boxShadow = 'var(--shadow)';
+            message.style.animation = 'fadeIn 0.3s ease-in-out';
+
+            if (type === 'success') {
+                message.style.backgroundColor = 'var(--success)';
+                message.style.color = 'white';
+            } else if (type === 'warning') {
+                message.style.backgroundColor = 'var(--warning)';
+                message.style.color = 'white';
+            } else if (type === 'info') {
+                message.style.backgroundColor = 'var(--primary)';
+                message.style.color = 'white';
+            } else {
+                message.style.backgroundColor = 'var(--danger)';
+                message.style.color = 'white';
+            }
+
+            document.body.appendChild(message);
+
+            // Remover después de 3 segundos
+            setTimeout(() => {
+                message.style.opacity = '0';
+                message.style.transition = 'opacity 0.3s';
+                setTimeout(() => {
+                    document.body.removeChild(message);
+                }, 300);
+            }, 3000);
+        }
+
+        function initEvents() {
+            // Login
+            document.getElementById('loginForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const errorMessage = document.getElementById('errorMessage');
+
+                const users = {
+                    'tecnico': 'smartenergy',
+                    'admin': 'smartenergy0663'
+                };
+
+                if (users[username] === password) {
+                    showPage('menu-page');
+                    errorMessage.style.display = 'none';
+                } else {
+                    errorMessage.style.display = 'block';
+                }
+            });
+
+            // Menú
+            document.getElementById('goToMyOBtn').addEventListener('click', () => {
+                showPage('report-page');
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                document.getElementById('loginForm').reset();
+                document.getElementById('errorMessage').style.display = 'none';
+                showPage('login-page');
+            });
+
+            // Botón Limpiar formulario
+            document.getElementById('clear-form-btn').addEventListener('click', () => {
+                if (confirm('¿Estás seguro de que deseas limpiar todo el formulario?')) {
+                    // Limpiar campos básicos
+                    document.getElementById('proyectoNombre').value = '';
+                    document.getElementById('ubicacion').value = '';
+                    document.getElementById('fecha').value = '';
+                    document.getElementById('tecnicoNombre').value = '';
+
+                    // Limpiar actividades
+                    const container = document.getElementById('selected-activities-container');
+                    const items = container.querySelectorAll('.selected-activity-item');
+                    items.forEach(item => item.remove());
+                    selectedActivities = [];
+                    selectedActivitiesCount = 0;
+                    updateActivityCounter();
+
+                    // Limpiar resultados, anomalías y recomendaciones
+                    document.getElementById('dynamic-resultados-container').innerHTML = '';
+                    document.getElementById('dynamic-anomalias-container').innerHTML = '';
+                    document.getElementById('dynamic-recomendaciones-container').innerHTML = '';
+
+                    document.getElementById('conclusion').value = '';
+                    totalImages = 0;
+                    borrarBorrador();
+                    actualizarResumen();
+                    showMessage('Formulario limpiado correctamente.', 'success');
+                }
+            });
+
+            // Ubicación
+            document.getElementById('get-location-btn').addEventListener('click', () => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            document.getElementById('ubicacion').value = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                            showMessage('Ubicación obtenida con éxito.', 'success');
+                        },
+                        (error) => {
+                            let errorMessage = 'No se pudo obtener la ubicación. ';
+                            switch (error.code) {
+                                case error.PERMISSION_DENIED:
+                                    errorMessage += 'Permiso denegado por el usuario.';
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    errorMessage += 'La información de ubicación no está disponible.';
+                                    break;
+                                case error.TIMEOUT:
+                                    errorMessage += 'La solicitud ha caducado.';
+                                    break;
+                                default:
+                                    errorMessage += 'Error desconocido.';
+                                    break;
+                            }
+                            showMessage(errorMessage, 'warning');
+                        }
+                    );
+                } else {
+                    showMessage('Tu navegador no soporta la geolocalización.', 'warning');
+                }
+            });
+
+            // Botones para añadir actividades desde selectores
+            document.querySelectorAll('.add-activity-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const type = this.getAttribute('data-type');
+                    const selectId = type === 'preventive' ? 'preventive-activities-select' : 'corrective-activities-select';
+                    const select = document.getElementById(selectId);
+                    const selectedValue = select.value;
+
+                    if (!selectedValue) {
+                        showMessage('Por favor selecciona una actividad primero.', 'warning');
+                        return;
+                    }
+
+                    addSelectedActivity(type, selectedValue);
+                });
+            });
+
+            // Añadir actividad personalizada
+            document.getElementById('add-custom-activity-btn').addEventListener('click', () => {
+                crearActividadPersonalizada();
+                showMessage('Actividad personalizada creada. Completa los detalles.', 'info');
+            });
+
+            // Botones para añadir elementos dinámicos (resultados, anomalías, recomendaciones)
+            document.getElementById('add-resultado-btn').addEventListener('click', () => {
+                const template = document.getElementById('template-resultado');
+                const clone = template.content.cloneNode(true);
+                const container = document.getElementById('dynamic-resultados-container');
+                container.appendChild(clone);
+                // Obtener el último elemento agregado (el dynamic-item)
+                const newElement = container.querySelector('.dynamic-item:last-child');
+                if (newElement) {
+                    initDynamicItemEvents(newElement);
+                }
+            });
+
+            document.getElementById('add-anomalia-btn').addEventListener('click', () => {
+                const template = document.getElementById('template-anomalia');
+                const clone = template.content.cloneNode(true);
+                const container = document.getElementById('dynamic-anomalias-container');
+                container.appendChild(clone);
+                // Obtener el último elemento agregado (el dynamic-item)
+                const newElement = container.querySelector('.dynamic-item:last-child');
+                if (newElement) {
+                    initDynamicItemEvents(newElement);
+                }
+            });
+
+            document.getElementById('add-recomendacion-btn').addEventListener('click', () => {
+                const template = document.getElementById('template-recomendacion');
+                const clone = template.content.cloneNode(true);
+                const container = document.getElementById('dynamic-recomendaciones-container');
+                container.appendChild(clone);
+                // Obtener el último elemento agregado (el dynamic-item)
+                const newElement = container.querySelector('.dynamic-item:last-child');
+                if (newElement) {
+                    initDynamicItemEvents(newElement);
+                }
+            });
+
+            // Volver al menú
+            document.getElementById('backToMenuBtn').addEventListener('click', () => {
+                showPage('menu-page');
+            });
+
+            // Generar PDF
+            document.getElementById('pdfForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Validar campos requeridos
+                const tecnicoNombre = document.getElementById('tecnicoNombre').value;
+                if (!tecnicoNombre.trim()) {
+                    showMessage('Por favor ingresa tu nombre en el campo "Realizado por"', 'warning');
+                    document.getElementById('tecnicoNombre').focus();
+                    return;
+                }
+
+                const proyecto = document.getElementById('proyectoNombre').value;
+                if (!proyecto.trim()) {
+                    showMessage('Ponle nombre al proyecto antes de generar el informe', 'warning');
+                    document.getElementById('proyectoNombre').focus();
+                    return;
+                }
+
+                detenerDictadoActivo();
+
+                // La barra avanza con el trabajo real: antes llegaba al 100 %
+                // en dos segundos y ahi se quedaba congelada hasta terminar.
+                const overlay = document.getElementById('loading-overlay');
+                const detalle = document.getElementById('progress-detail');
+                overlay.classList.add('active');
+                updateProgress(3, 100);
+                if (detalle) detalle.textContent = 'Preparando el documento...';
+
+                try {
+                    await generatePDF();
+                    updateProgress(100, 100);
+                } catch (error) {
+                    console.error('Error generando el PDF:', error);
+                    showMessage('No se pudo generar el informe: ' + (error.message || error), 'warning');
+                } finally {
+                    overlay.classList.remove('active');
+                    updateProgress(0, 100);
+                }
+            });
+        }
+
+        // Crea una actividad personalizada y devuelve su elemento.
+        function crearActividadPersonalizada() {
+            const template = document.getElementById('template-custom-activity');
+            const clone = template.content.cloneNode(true);
+            const activityElement = clone.querySelector('.selected-activity-item');
+
+            const activityId = 'custom-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+            activityElement.setAttribute('data-activity-id', activityId);
+
+            document.getElementById('selected-activities-container').appendChild(activityElement);
+
+            selectedActivities.push({
+                id: activityId,
+                type: 'custom',
+                title: 'Actividad Personalizada',
+                description: '',
+                element: activityElement
+            });
+
+            selectedActivitiesCount++;
+            updateActivityCounter();
+            initActivityEvents(activityElement);
+
+            // El titulo escrito se refleja en la cabecera de la tarjeta
+            const titleInput = activityElement.querySelector('.custom-activity-title');
+            titleInput.addEventListener('input', function () {
+                activityElement.querySelector('.selected-activity-title').textContent =
+                    this.value || 'Actividad Personalizada';
+            });
+
+            actualizarResumen();
+            return activityElement;
+        }
+
+        function initDynamicItemEvents(clone) {
+            // Dictado y boton "Mejorar" para la textarea de este bloque
+            inicializarVoz(clone);
+            actualizarResumen();
+
+            // Botón de eliminar
+            const removeBtn = clone.querySelector('.delete-item-btn');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    clone.remove();
+                    actualizarResumen();
+                    guardarBorrador();
+                });
+            }
+
+            // Subida de imágenes - Usar la misma lógica que en actividades
+            const imageUpload = clone.querySelector('.image-upload');
+            const fileInput = clone.querySelector('input[type="file"]');
+            const previewContainer = clone.querySelector('.image-preview-container');
+
+
+            if (imageUpload && fileInput && previewContainer) {
+                imageUpload.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', async (e) => {
+                    await agregarImagenes(e.target.files, previewContainer);
+                    e.target.value = ''; // permite volver a elegir la misma foto
+                });
+            } else {
+                console.warn('No se encontraron elementos necesarios para imagen upload');
+            }
+        }
+
+        // ============================================================
+        // Reordenar fotos arrastrando.
+        // Los eventos se registran UNA sola vez por contenedor (delegación).
+        // Antes se volvían a registrar sobre todas las fotos cada vez que se
+        // añadía una nueva, así que con 20 fotos había cientos de listeners.
+        // ============================================================
+        function enableImageDragAndDrop(container) {
+            if (!container || container.dataset.dndListo === '1') return;
+            container.dataset.dndListo = '1';
+
+            const itemDesde = (destino) => destino && destino.closest
+                ? destino.closest('.image-preview-item')
+                : null;
+
+            container.addEventListener('dragstart', (e) => {
+                const item = itemDesde(e.target);
+                if (!item) return;
+                item.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', '');
+            });
+
+            container.addEventListener('dragend', () => {
+                container.querySelectorAll('.image-preview-item')
+                    .forEach(el => el.classList.remove('dragging', 'drag-over'));
+            });
+
+            container.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const item = itemDesde(e.target);
+                const arrastrado = container.querySelector('.dragging');
+                if (item && item !== arrastrado) item.classList.add('drag-over');
+            });
+
+            container.addEventListener('dragleave', (e) => {
+                const item = itemDesde(e.target);
+                if (item) item.classList.remove('drag-over');
+            });
+
+            container.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const destino = itemDesde(e.target);
+                const arrastrado = container.querySelector('.dragging');
+                if (!destino || !arrastrado || destino === arrastrado) return;
+
+                const items = Array.from(container.querySelectorAll('.image-preview-item'));
+                const iOrigen = items.indexOf(arrastrado);
+                const iDestino = items.indexOf(destino);
+                if (iOrigen < iDestino) {
+                    destino.parentNode.insertBefore(arrastrado, destino.nextSibling);
+                } else {
+                    destino.parentNode.insertBefore(arrastrado, destino);
+                }
+                destino.classList.remove('drag-over');
+            });
+        }
+
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+            // URLs de imágenes
+            const portadaUrl = 'https://raw.githubusercontent.com/Jairluna16/AUDIOS/refs/heads/main/Curriculum%20CV%20Resume%20Profesional%20Academico%20Creativo%20Simple%20Blanco.png';
+            const fondoUrl = 'https://raw.githubusercontent.com/Jairluna16/AUDIOS/refs/heads/main/2.png';
+
+            // Información básica
+            const proyectoNombre = document.getElementById('proyectoNombre').value;
+            const ubicacion = document.getElementById('ubicacion').value;
+            const fecha = document.getElementById('fecha').value;
+            // yyyy-mm-dd -> dd/mm/yyyy para mostrarla en el informe
+            const fechaLegible = /^\d{4}-\d{2}-\d{2}$/.test(fecha)
+                ? fecha.split('-').reverse().join('/')
+                : (fecha || 'Sin especificar');
+            const tecnicoNombre = document.getElementById('tecnicoNombre').value;
+
+            // Dimensiones
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 15;
+            const contentWidth = pageWidth - (2 * margin);
+
+            // Cuantas imagenes por fila pidio el tecnico en ese bloque
+            const getImagesPerRow = (element) => {
+                const input = element.querySelector(
+                    '.activity-images-per-row, .result-images-per-row, ' +
+                    '.anomaly-images-per-row, .recommendation-images-per-row, ' +
+                    '.inversor-images-per-row');
+                const n = input ? parseInt(input.value, 10) : 2;
+                return Math.max(1, Math.min(4, n || 2));
+            };
+
+            // ----------------------------------------------------------
+            // PROGRESO REAL
+            // ----------------------------------------------------------
+            const totalFotos = document.querySelectorAll('#report-page .image-preview-item img').length;
+            let fotosDibujadas = 0;
+            const detalleProgreso = document.getElementById('progress-detail');
+
+            const reportarProgreso = () => {
+                const pct = totalFotos === 0
+                    ? 60
+                    : Math.min(96, 8 + Math.round((fotosDibujadas / totalFotos) * 88));
+                updateProgress(pct, 100);
+                if (detalleProgreso) {
+                    detalleProgreso.textContent = totalFotos
+                        ? 'Colocando fotos... ' + fotosDibujadas + ' de ' + totalFotos
+                        : 'Redactando el informe...';
+                }
+            };
+
+            // ----------------------------------------------------------
+            // REJILLA DE IMAGENES - una sola implementacion para todo el
+            // informe (antes este mismo codigo estaba copiado cinco veces y
+            // las copias ya se habian desincronizado entre si).
+            //
+            // Las fotos NUNCA se recortan: se reducen hasta caber completas
+            // dentro de su celda ("contain") y van centradas. Todas las celdas
+            // de una fila tienen el mismo alto, asi que la fila se ve pareja.
+            // ----------------------------------------------------------
+            const LIMITE_INFERIOR = pageHeight - margin - 10;   // deja aire sobre el pie
+            const ALTO_MIN_FILA = 34;   // por debajo de esto, mejor pasar de pagina
+
+            // Reserva `alto` mm en la pagina actual; si no caben, pasa a la siguiente.
+            const asegurarEspacio = async (alto) => {
+                if (yPos + alto > LIMITE_INFERIOR) {
+                    await addNewPageWithBackground();
+                    yPos = margin + 20;
+                    return true;
+                }
+                return false;
+            };
+
+            // Escribe un parrafo repartiendolo entre paginas si hace falta.
+            // Antes el texto se volcaba de golpe y las lineas que no cabian se
+            // salian del papel.
+            const escribirParrafo = async (texto, opciones) => {
+                if (!texto) return;
+                const o = opciones || {};
+                const size = o.size || 11;
+                const estilo = o.style || 'normal';
+                const color = o.color || [31, 41, 55];
+                const sangria = o.indent || 0;
+                const alto = size * 0.42;
+
+                const aplicarEstilo = () => {
+                    doc.setFontSize(size);
+                    doc.setFont('helvetica', estilo);
+                    doc.setTextColor(color[0], color[1], color[2]);
+                };
+
+                aplicarEstilo();
+                const lineas = doc.splitTextToSize(texto, contentWidth - sangria);
+
+                for (const linea of lineas) {
+                    if (yPos + alto > LIMITE_INFERIOR) {
+                        await addNewPageWithBackground();
+                        yPos = margin + 20;
+                        aplicarEstilo();
+                    }
+                    doc.text(linea, margin + sangria, yPos);
+                    yPos += alto;
+                }
+                yPos += (o.after === undefined ? 3 : o.after);
+            };
+
+            // Titulo de seccion. No se deja solo al pie de la pagina.
+            const escribirTitulo = async (texto, opciones) => {
+                const o = opciones || {};
+                await asegurarEspacio((o.reserva === undefined ? 26 : o.reserva));
+                doc.setFontSize(o.size || 13);
+                doc.setFont('helvetica', 'bold');
+                const c = o.color || [25, 55, 120];
+                doc.setTextColor(c[0], c[1], c[2]);
+                doc.text(texto, margin, yPos);
+                yPos += (o.after === undefined ? 10 : o.after);
+            };
+
+            const medidasDe = (img) => {
+                const w = parseFloat(img.dataset.w) || img.naturalWidth || 4;
+                const h = parseFloat(img.dataset.h) || img.naturalHeight || 3;
+                return { w: w, h: h, ar: w / h };
+            };
+
+            // Dibuja un pie de foto centrado en `centroX` a partir de yPos.
+            // Devuelve el numero de lineas que ocupo.
+            const pieDeFoto = (texto, centroX, anchoMax) => {
+                if (!texto) return 0;
+                doc.setFontSize(8.5);
+                doc.setFont('helvetica', 'italic');
+                doc.setTextColor(110, 115, 125);
+                const lineas = doc.splitTextToSize(texto, anchoMax);
+                for (let i = 0; i < lineas.length; i++) {
+                    doc.text(lineas[i], centroX, yPos + 3.4 + (i * 3.6), { align: 'center' });
+                }
+                return lineas.length;
+            };
+
+            const dibujarGrid = async (imageItems, imagesPerRow) => {
+                const items = Array.from(imageItems).filter(it => {
+                    const img = it.querySelector('img');
+                    return img && img.src;
+                });
+                if (items.length === 0) return;
+
+                const cols = Math.max(1, Math.min(4, parseInt(imagesPerRow, 10) || 2));
+                const gap = 4;
+                const cellW = (contentWidth - gap * (cols - 1)) / cols;
+                // Con una sola foto por fila se permite mas alto; con varias la
+                // celda se mantiene proporcionada para no comerse la pagina.
+                const cellHMax = cols === 1 ? 118 : cellW * 1.15;
+
+                const pies = items.map(it => {
+                    const c = it.querySelector('.image-caption');
+                    return (c && c.value ? c.value : '').trim();
+                });
+                // Si todos los pies son iguales (o estan vacios) se pone uno solo
+                // debajo del conjunto; si son distintos, uno por foto.
+                const pieIndividual = !pies.every(p => p === pies[0]);
+
+                for (let i = 0; i < items.length; i += cols) {
+                    const fila = items.slice(i, i + cols);
+                    const medidas = fila.map(it => medidasDe(it.querySelector('img')));
+
+                    // Alto de la fila = el que necesite la foto mas alta, con tope.
+                    let cellH = 0;
+                    medidas.forEach(m => {
+                        cellH = Math.max(cellH, Math.min(cellHMax, cellW / m.ar));
+                    });
+
+                    const altoPie = pieIndividual ? 12 : 0;
+
+                    if (yPos + cellH + altoPie > LIMITE_INFERIOR) {
+                        const disponible = LIMITE_INFERIOR - yPos - altoPie;
+                        if (disponible >= ALTO_MIN_FILA) {
+                            cellH = Math.min(cellH, disponible);  // encoge y llena la pagina
+                        } else {
+                            await addNewPageWithBackground();
+                            yPos = margin + 20;
+                        }
+                    }
+
+                    const anchoFila = fila.length * cellW + (fila.length - 1) * gap;
+                    const inicioX = margin + (contentWidth - anchoFila) / 2;
+
+                    for (let j = 0; j < fila.length; j++) {
+                        const m = medidas[j];
+                        let h = Math.min(cellH, cellW / m.ar);
+                        let w = h * m.ar;
+                        if (w > cellW) { w = cellW; h = w / m.ar; }
+
+                        const x = inicioX + j * (cellW + gap) + (cellW - w) / 2;
+                        const y = yPos + (cellH - h) / 2;   // centrada en su celda
+
+                        try {
+                            doc.addImage(fila[j].querySelector('img').src, 'JPEG', x, y, w, h);
+                        } catch (error) {
+                            console.error('Error agregando imagen:', error);
+                        }
+                        fotosDibujadas++;
+                    }
+
+                    yPos += cellH + 2;
+
+                    if (pieIndividual) {
+                        let maxLineas = 0;
+                        for (let j = 0; j < fila.length; j++) {
+                            const centroX = inicioX + j * (cellW + gap) + cellW / 2;
+                            maxLineas = Math.max(maxLineas, pieDeFoto(pies[i + j], centroX, cellW - 2));
+                        }
+                        yPos += maxLineas * 3.6 + 5;
+                    }
+
+                    reportarProgreso();
+                    // Deja respirar al navegador para que la barra se repinte
+                    await new Promise(r => setTimeout(r, 0));
+                }
+
+                if (!pieIndividual && pies[0]) {
+                    if (yPos + 12 > LIMITE_INFERIOR) {
+                        await addNewPageWithBackground();
+                        yPos = margin + 20;
+                    }
+                    const n = pieDeFoto(pies[0], pageWidth / 2, contentWidth * 0.8);
+                    yPos += n * 3.6 + 5;
+                }
+
+                yPos += 3;
+            };
+
+            // Agregar portada
+            try {
+                doc.addImage(portadaUrl, 'PNG', 0, 0, pageWidth, pageHeight);
+            } catch (error) {
+                console.error('Error cargando portada:', error);
+            }
+
+            // Función auxiliar para agregar página con fondo
+            const addNewPageWithBackground = async () => {
+                doc.addPage();
+                try {
+                    doc.addImage(fondoUrl, 'PNG', 0, 0, pageWidth, pageHeight);
+                } catch (error) {
+                    console.error('Error cargando fondo:', error);
+                }
+            };
+
+            // Agregar nueva página con fondo
+            await addNewPageWithBackground();
+
+            let yPos = margin + 25;
+
+            // Título principal
+            doc.setFontSize(18);
+            doc.setTextColor(25, 55, 120);
+            doc.setFont('helvetica', 'bold');
+            doc.text('INFORME TÉCNICO', pageWidth / 2, yPos, { align: 'center' });
+            yPos += 8;
+
+            // Información del proyecto
+            doc.setFontSize(11);
+            doc.setTextColor(31, 41, 55);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Proyecto: ${proyectoNombre}`, margin, yPos);
+            yPos += 7;
+            doc.text(`Ubicación: ${ubicacion || 'Sin especificar'}`, margin, yPos);
+            yPos += 7;
+            doc.text(`Fecha: ${fechaLegible}`, margin, yPos);
+            yPos += 7;
+            doc.text(`Realizado por: ${tecnicoNombre}`, margin, yPos);
+            yPos += 12;
+
+            // Introducción
+            doc.setFontSize(11);
+            doc.setTextColor(31, 41, 55);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Introducción', margin, yPos);
+            yPos += 6;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            const nombreProyecto = proyectoNombre.trim() || 'el proyecto solar';
+            const introText = 'El presente informe describe las actividades de mantenimiento preventivo y ' +
+                'correctivo realizadas en ' + nombreProyecto + ', con el objetivo de garantizar su operación ' +
+                'eficiente, segura y sostenida. El mantenimiento es un componente clave para minimizar pérdidas ' +
+                'energéticas, reducir fallas inesperadas y prolongar la vida útil de los equipos e instalaciones. ' +
+                'Este documento incluye el alcance del mantenimiento, los resultados obtenidos, las acciones ' +
+                'correctivas implementadas y las recomendaciones para optimizar el desempeño del sistema.';
+            await escribirParrafo(introText, { size: 10, after: 5 });
+
+            // Alcance de los trabajos
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Alcance de los trabajos', margin, yPos);
+            yPos += 6;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            const scopeItems = [
+                '• Inspección de módulos fotovoltaicos: Revisión visual y limpieza de las superficies.',
+                '• Inversores: Inspección eléctrica, pruebas de funcionamiento.',
+                '• Estructuras de soporte: Verificación de fijaciones y corrosión.',
+                '• Sistema de cableado: Revisión de conexiones, canalizaciones, y posibles puntos calientes.',
+                '• Análisis ambiental: Evaluación de posibles obstrucciones o acumulación de suciedad por condiciones externas.'
+            ];
+
+            for (const punto of scopeItems) {
+                await escribirParrafo(punto, { size: 10, indent: 5, after: 2 });
+            }
+
+            yPos += 5;
+
+            // Procesar Actividades
+            const activitiesContainer = document.getElementById('selected-activities-container');
+            const activityItems = activitiesContainer.querySelectorAll('.selected-activity-item');
+
+            if (activityItems.length > 0) {
+                yPos += 5;
+                await escribirTitulo('ACTIVIDADES REALIZADAS');
+
+                for (const item of activityItems) {
+                    const titleElem = item.querySelector('.selected-activity-title');
+                    const descElem = item.querySelector('.activity-description');
+                    const notesElem = item.querySelector('.activity-notes');
+                    const imagesContainer = item.querySelector('.image-preview-container');
+
+                    await asegurarEspacio(22);
+
+                    // Título de actividad
+                    if (titleElem) {
+                        await escribirParrafo('• ' + titleElem.textContent.trim(),
+                            { size: 12, style: 'bold', color: [59, 130, 246], after: 2 });
+                    }
+
+                    // Descripción
+                    if (descElem && descElem.textContent.trim()) {
+                        await escribirParrafo(descElem.textContent.trim(), { indent: 5 });
+                    }
+
+                    // Notas adicionales
+                    if (notesElem && notesElem.value.trim()) {
+                        await escribirParrafo('Notas: ' + notesElem.value.trim(),
+                            { size: 10, style: 'italic', color: [75, 85, 99], indent: 5 });
+                    }
+
+                    // Imágenes con captions - manteniendo proporciones originales
+                    if (imagesContainer && imagesContainer.querySelectorAll('img').length > 0) {
+                        const imageItems = imagesContainer.querySelectorAll('.image-preview-item');
+                        await dibujarGrid(imageItems, getImagesPerRow(item));
+                    }
+
+                    // Procesar inversores si esta es "Toma de medidas de strings"
+                    // Por id, no por el texto: si el titulo cambia una tilde,
+                    // antes desaparecia toda la seccion de inversores.
+                    if (item.getAttribute('data-activity-id') === 'prev-5') {
+                        const inversorSection = item.querySelector('.inversor-section');
+                        if (inversorSection) {
+                            const inversorGroups = inversorSection.querySelectorAll('.inversor-group');
+
+                            for (const inversorGroup of inversorGroups) {
+                                const inversorLabel = inversorGroup.querySelector('.inversor-title');
+                                const previewContainer = inversorGroup.querySelector('.inversor-image-preview-container');
+
+
+                                await asegurarEspacio(30);
+
+                                // Título del inversor
+                                if (inversorLabel) {
+                                    yPos += 6;
+                                    await escribirParrafo(inversorLabel.textContent.trim().toUpperCase(),
+                                        { size: 12, style: 'bold', color: [25, 55, 120], after: 4 });
+                                }
+
+                                // Imágenes del inversor
+                                if (previewContainer) {
+                                    const imageItems = previewContainer.querySelectorAll('.image-preview-item');
+
+                                    if (imageItems.length > 0) {
+                                        await dibujarGrid(imageItems, getImagesPerRow(inversorGroup));
+                                    }
+                                }
+
+                                yPos += 3;
+                            }
+                        }
+                    }
+
+                    yPos += 3;
+                }
+            }
+
+            // Procesar Resultados
+            const resultadosContainer = document.getElementById('dynamic-resultados-container');
+            const resultItems = resultadosContainer.querySelectorAll('.dynamic-item');
+
+            if (resultItems.length > 0) {
+                yPos += 5;
+                await escribirTitulo('RESULTADOS Y HALLAZGOS');
+
+                for (const item of resultItems) {
+                    const textElem = item.querySelector('.resultado-text');
+                    const imagesContainer = item.querySelector('.image-preview-container');
+
+                    await asegurarEspacio(22);
+
+                    if (textElem && textElem.value.trim()) {
+                        await escribirParrafo(textElem.value.trim());
+                    }
+
+                    if (imagesContainer && imagesContainer.querySelectorAll('img').length > 0) {
+                        const imageItems = imagesContainer.querySelectorAll('.image-preview-item');
+                        await dibujarGrid(imageItems, getImagesPerRow(item));
+                    }
+
+                    yPos += 3;
+                }
+            }
+
+            // Procesar Anomalías
+            const anomaliasContainer = document.getElementById('dynamic-anomalias-container');
+            const anomalyItems = anomaliasContainer.querySelectorAll('.dynamic-item');
+
+            if (anomalyItems.length > 0) {
+                yPos += 5;
+                await escribirTitulo('ANOMALÍAS DETECTADAS');
+
+                for (const item of anomalyItems) {
+                    const textElem = item.querySelector('.anomalia-text');
+                    const imagesContainer = item.querySelector('.image-preview-container');
+
+                    await asegurarEspacio(22);
+
+                    if (textElem && textElem.value.trim()) {
+                        await escribirParrafo(textElem.value.trim());
+                    }
+
+                    if (imagesContainer && imagesContainer.querySelectorAll('img').length > 0) {
+                        const imageItems = imagesContainer.querySelectorAll('.image-preview-item');
+                        await dibujarGrid(imageItems, getImagesPerRow(item));
+                    }
+
+                    yPos += 3;
+                }
+            }
+
+            // Procesar Recomendaciones
+            const recomendacionesContainer = document.getElementById('dynamic-recomendaciones-container');
+            const recItems = recomendacionesContainer.querySelectorAll('.dynamic-item');
+
+            if (recItems.length > 0) {
+                yPos += 5;
+                await escribirTitulo('RECOMENDACIONES');
+
+                for (const item of recItems) {
+                    const textElem = item.querySelector('.recomendacion-text');
+                    const imagesContainer = item.querySelector('.image-preview-container');
+
+                    await asegurarEspacio(22);
+
+                    if (textElem && textElem.value.trim()) {
+                        await escribirParrafo(textElem.value.trim());
+                    }
+
+                    if (imagesContainer && imagesContainer.querySelectorAll('img').length > 0) {
+                        const imageItems = imagesContainer.querySelectorAll('.image-preview-item');
+                        await dibujarGrid(imageItems, getImagesPerRow(item));
+                    }
+
+                    yPos += 3;
+                }
+            }
+
+            // Conclusión
+            const conclusion = document.getElementById('conclusion').value;
+            if (conclusion.trim()) {
+                yPos += 10;
+                await escribirTitulo('CONCLUSIÓN', { after: 8 });
+                await escribirParrafo(conclusion.trim());
+            }
+
+            // Guardar PDF
+            // Nombre de archivo sin acentos ni caracteres que Windows rechaza
+            const nombreArchivo = proyectoNombre
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^\w\s-]/g, '')
+                .trim().replace(/\s+/g, '_') || 'Proyecto';
+
+            if (detalleProgreso) detalleProgreso.textContent = 'Guardando el archivo...';
+            doc.save(`Informe_Tecnico_${nombreArchivo}_${fecha}.pdf`);
+
+            showMessage('Informe generado con éxito. El PDF se ha descargado en tu dispositivo.', 'success');
+        }
+    </script>
+</body>
+</html>
