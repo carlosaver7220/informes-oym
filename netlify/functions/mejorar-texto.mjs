@@ -26,6 +26,39 @@
 
 const LIMITE_CARACTERES = 6000;
 
+/*
+ * PLAZOS
+ *
+ * Netlify corta la funcion a los ~30 s. Sin plazos propios, la cadena de
+ * modelos de reserva se comia ese tiempo entera y la funcion moria con un
+ * 502 generico: el tecnico veia el boton girando medio minuto y luego un
+ * error que no explicaba nada.
+ *
+ * Con presupuesto, la funcion siempre contesta a tiempo. Si no le da para
+ * redactar, devuelve 503, que el cliente ya entiende como "pasajero, vuelve
+ * a intentarlo", y mientras tanto aplica su limpieza local.
+ */
+const PRESUPUESTO_MS = 20000; // margen para responder antes de que corten
+const TIMEOUT_MODELO_MS = 8000; // lo que se le concede a un modelo concreto
+const TIMEOUT_LISTA_MS = 5000; // lo que se le concede a la lista de modelos
+
+/** fetch que se rinde solo, en vez de quedarse colgado para siempre. */
+async function fetchConPlazo(url, opciones, ms) {
+  try {
+    return await fetch(url, { ...opciones, signal: AbortSignal.timeout(ms) });
+  } catch (error) {
+    // Un plazo agotado no es culpa del texto: merece la pena probar el
+    // siguiente modelo si aun queda presupuesto.
+    if (error?.name === "TimeoutError" || error?.name === "AbortError") {
+      throw Object.assign(
+        new Error(`Google no respondio en ${Math.round(ms / 1000)} s`),
+        { status: 504, otroModelo: true },
+      );
+    }
+    throw Object.assign(error, { status: error.status || 502, otroModelo: true });
+  }
+}
+
 const INSTRUCCIONES = `Eres el redactor técnico de SmartEnergy, una empresa de instalación y
 mantenimiento de plantas solares fotovoltaicas en Colombia.
 
@@ -95,9 +128,11 @@ async function obtenerModelos() {
   if (process.env.GEMINI_MODEL) return [process.env.GEMINI_MODEL];
   if (modelosResueltos) return modelosResueltos;
 
-  const respuesta = await fetch(`${GEMINI_BASE}/models?pageSize=200`, {
-    headers: { "x-goog-api-key": process.env.GEMINI_API_KEY },
-  });
+  const respuesta = await fetchConPlazo(
+    `${GEMINI_BASE}/models?pageSize=200`,
+    { headers: { "x-goog-api-key": process.env.GEMINI_API_KEY } },
+    TIMEOUT_LISTA_MS,
+  );
 
   if (!respuesta.ok) {
     const detalle = await respuesta.text();
@@ -136,24 +171,28 @@ async function obtenerModelos() {
   return elegidos;
 }
 
-/** Una sola peticion a un modelo concreto. */
-async function pedirAGemini(modelo, texto, contexto) {
+/** Una sola peticion a un modelo concreto, con plazo. */
+async function pedirAGemini(modelo, texto, contexto, plazoMs) {
   const url = `${GEMINI_BASE}/models/${modelo}:generateContent`;
 
-  const respuesta = await fetch(url, {
-    method: "POST",
-    headers: {
-      // La clave va en la cabecera, nunca en la URL: las URLs quedan
-      // registradas en los logs de los servidores intermedios.
-      "x-goog-api-key": process.env.GEMINI_API_KEY,
-      "Content-Type": "application/json",
+  const respuesta = await fetchConPlazo(
+    url,
+    {
+      method: "POST",
+      headers: {
+        // La clave va en la cabecera, nunca en la URL: las URLs quedan
+        // registradas en los logs de los servidores intermedios.
+        "x-goog-api-key": process.env.GEMINI_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: INSTRUCCIONES }] },
+        contents: [{ parts: [{ text: construirPeticion(texto, contexto) }] }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
+      }),
     },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: INSTRUCCIONES }] },
-      contents: [{ parts: [{ text: construirPeticion(texto, contexto) }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
-    }),
-  });
+    plazoMs,
+  );
 
   if (!respuesta.ok) {
     const detalle = await respuesta.text();
@@ -202,12 +241,28 @@ async function pedirAGemini(modelo, texto, contexto) {
  * candidato, que suele estar libre.
  */
 async function redactarConGemini(texto, contexto) {
+  // Todo lo que sigue tiene que caber aqui dentro.
+  const limite = Date.now() + PRESUPUESTO_MS;
+
   const modelos = await obtenerModelos();
   let ultimoError = null;
 
   for (const modelo of modelos) {
+    // Mejor rendirse con un mensaje util que morir a medias y que Netlify
+    // devuelva un 502 sin explicacion.
+    const restante = limite - Date.now();
+    if (restante < 3000) {
+      console.warn("Se agoto el presupuesto de tiempo antes de probar", modelo);
+      break;
+    }
+
     try {
-      const resultado = await pedirAGemini(modelo, texto, contexto);
+      const resultado = await pedirAGemini(
+        modelo,
+        texto,
+        contexto,
+        Math.min(TIMEOUT_MODELO_MS, restante),
+      );
       if (resultado) {
         // El que funciona pasa a ser el primero de la cola.
         if (modelosResueltos && modelosResueltos[0] !== modelo) {
@@ -228,14 +283,20 @@ async function redactarConGemini(texto, contexto) {
     }
   }
 
-  // Se acabaron los candidatos.
-  if (ultimoError && [429, 503].includes(ultimoError.status)) {
+  // Se acabaron los candidatos (o el tiempo).
+  if (ultimoError && [429, 503, 504].includes(ultimoError.status)) {
+    const porCuota = ultimoError.status === 429;
     throw Object.assign(
       new Error(
-        "El servicio gratuito de Gemini está saturado en este momento. " +
-          "Espera un minuto y vuelve a pulsar Mejorar.",
+        porCuota
+          ? "Se agotó la cuota gratuita de Gemini por hoy. Revisa el consumo " +
+            "en aistudio.google.com; mientras tanto se aplica la limpieza básica."
+          : "Gemini no está respondiendo en este momento. Espera un minuto y " +
+            "vuelve a pulsar Mejorar.",
       ),
-      { status: 503 },
+      // Si es cuota, hoy ya no hay nada que hacer: que el cliente no invite a
+      // reintentar y aplique su limpieza local. Si es lentitud, sí compensa.
+      { status: 503, reintentar: !porCuota },
     );
   }
   throw ultimoError || new Error("No se pudo redactar el texto");
@@ -326,7 +387,11 @@ export default async (request) => {
     console.error("Error redactando el texto:", error);
     const status = typeof error?.status === "number" ? error.status : 502;
     return Response.json(
-      { error: error?.message || "No se pudo contactar al servicio" },
+      {
+        error: error?.message || "No se pudo contactar al servicio",
+        // false = no insistas hoy (cuota agotada); la app aplica su limpieza.
+        reintentar: error?.reintentar !== false,
+      },
       { status },
     );
   }

@@ -1670,15 +1670,28 @@
         async function mejorarConIA(texto, contexto) {
             if (iaDisponible === false) return { noDisponible: true };
 
+            // Plazo propio: en el celular, con mala cobertura, la petición se
+            // quedaba colgada y el botón giraba hasta que el navegador se
+            // rendía. Mejor rendirse a los 25 s y aplicar la limpieza local.
+            const reloj = new AbortController();
+            const plazo = setTimeout(() => reloj.abort(), 25000);
+
             let respuesta;
             try {
                 respuesta = await fetch(ENDPOINT_IA, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ texto: texto, contexto: contexto })
+                    body: JSON.stringify({ texto: texto, contexto: contexto }),
+                    signal: reloj.signal
                 });
             } catch (e) {
-                return { fallo: 'No hubo conexión con el servicio.' };
+                return {
+                    fallo: e && e.name === 'AbortError'
+                        ? 'El servicio de IA tardó demasiado.'
+                        : 'No hubo conexión con el servicio.'
+                };
+            } finally {
+                clearTimeout(plazo);
             }
 
             if (respuesta.ok) {
@@ -1698,11 +1711,16 @@
                 return { noDisponible: true };
             }
 
-            let mensaje = '';
-            try { mensaje = (await respuesta.json()).error || ''; } catch (e) {}
+            let cuerpo = {};
+            try { cuerpo = await respuesta.json(); } catch (e) {}
+            const mensaje = cuerpo.error || '';
 
-            // Cuota agotada o modelo saturado: pasajero, vale la pena reintentar.
-            if (respuesta.status === 429 || respuesta.status === 503) {
+            // Saturación pasajera: no se toca el texto, para que el técnico
+            // pueda volver a pulsar y obtener la versión buena. Pero si la
+            // cuota está agotada, insistir hoy no sirve de nada: se trata
+            // como un fallo normal y se aplica la limpieza local.
+            const merecePena = cuerpo.reintentar !== false;
+            if ((respuesta.status === 429 || respuesta.status === 503) && merecePena) {
                 return { saturado: true, fallo: mensaje };
             }
 
@@ -2037,9 +2055,12 @@
                     textarea.value = resultado;
                     textarea.dispatchEvent(new Event('input', { bubbles: true }));
                     btnDeshacer.classList.remove('oculto');
+                    // Cuando la IA no entra se dice por qué: si no, el técnico
+                    // no distingue "la IA lo redactó" de "esto es un apaño".
                     estado.textContent = conIA
                         ? 'Redactado con IA. Revísalo antes de generar el PDF.'
-                        : 'Sin IA: solo limpieza básica. Revisa la redacción.';
+                        : (intento.fallo || 'Sin conexión con la IA.') +
+                          ' Solo se aplicó limpieza básica: revisa la redacción.';
                     estado.className = 'voz-estado ok';
                 });
 
