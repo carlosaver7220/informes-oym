@@ -16,8 +16,9 @@
  * Las claves se definen como variables de entorno en Netlify
  * (Site configuration -> Environment variables), NUNCA en el repositorio.
  *
- * Variables opcionales para cambiar de modelo sin tocar el código:
- *   GEMINI_MODEL     por defecto "gemini-2.0-flash"
+ * El modelo de Gemini se elige solo a partir de la lista que publica Google.
+ * Variables opcionales para forzar uno concreto:
+ *   GEMINI_MODEL     desactiva la eleccion automatica
  *   ANTHROPIC_MODEL  por defecto "claude-opus-5"
  *
  * Queda publicada en /.netlify/functions/mejorar-texto
@@ -58,7 +59,7 @@ const construirPeticion = (texto, contexto) =>
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
 /**
- * Elige el mejor modelo de la lista que publica Google.
+ * Ordena los modelos que publica Google y devuelve los mejores candidatos.
  *
  * Se hace así porque Google renombra y retira modelos cada pocos meses, y
  * dejar el nombre escrito a mano hace que la herramienta deje de funcionar
@@ -66,7 +67,7 @@ const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
  * rapidos y los que entran en la capa gratuita, y para redactar un parrafo
  * van de sobra.
  */
-function elegirModelo(nombres) {
+function elegirModelos(nombres) {
   // Modelos que no sirven para escribir texto.
   const descartar = /(vision|embedding|aqa|imagen|image|tts|audio|live|learnlm|gemma)/i;
 
@@ -82,16 +83,17 @@ function elegirModelo(nombres) {
 
   return nombres
     .filter((n) => !descartar.test(n))
-    .sort((a, b) => puntuar(b) - puntuar(a))[0];
+    .sort((a, b) => puntuar(b) - puntuar(a))
+    .slice(0, 5); // el mejor y cuatro suplentes
 }
 
 // Se recuerda entre invocaciones mientras el contenedor siga vivo, para no
 // pedir la lista en cada pulsacion del boton.
-let modeloResuelto = null;
+let modelosResueltos = null;
 
-async function obtenerModelo() {
-  if (process.env.GEMINI_MODEL) return process.env.GEMINI_MODEL;
-  if (modeloResuelto) return modeloResuelto;
+async function obtenerModelos() {
+  if (process.env.GEMINI_MODEL) return [process.env.GEMINI_MODEL];
+  if (modelosResueltos) return modelosResueltos;
 
   const respuesta = await fetch(`${GEMINI_BASE}/models?pageSize=200`, {
     headers: { "x-goog-api-key": process.env.GEMINI_API_KEY },
@@ -115,8 +117,11 @@ async function obtenerModelo() {
     .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
     .map((m) => String(m.name).replace(/^models\//, ""));
 
-  const elegido = elegirModelo(nombres);
-  if (!elegido) {
+  // Se guarda una lista, no un solo modelo: en la capa gratuita los modelos
+  // mas nuevos se saturan a ratos y devuelven 503. Teniendo alternativas, la
+  // funcion baja al siguiente en vez de fallar.
+  const elegidos = elegirModelos(nombres);
+  if (elegidos.length === 0) {
     throw Object.assign(
       new Error(
         "Tu clave de Gemini no da acceso a ningun modelo de texto. " +
@@ -126,13 +131,13 @@ async function obtenerModelo() {
     );
   }
 
-  modeloResuelto = elegido;
-  console.log("Modelo de Gemini elegido automaticamente:", elegido);
-  return elegido;
+  modelosResueltos = elegidos;
+  console.log("Modelos de Gemini disponibles, por orden:", elegidos.join(", "));
+  return elegidos;
 }
 
-async function redactarConGemini(texto, contexto) {
-  const modelo = await obtenerModelo();
+/** Una sola peticion a un modelo concreto. */
+async function pedirAGemini(modelo, texto, contexto) {
   const url = `${GEMINI_BASE}/models/${modelo}:generateContent`;
 
   const respuesta = await fetch(url, {
@@ -152,29 +157,25 @@ async function redactarConGemini(texto, contexto) {
 
   if (!respuesta.ok) {
     const detalle = await respuesta.text();
+
+    // "otroModelo" marca los fallos que no son culpa del texto: merece la
+    // pena reintentar con el siguiente modelo de la lista.
+    //   404 el modelo ya no existe
+    //   429 se agoto la cuota gratuita de ese modelo
+    //   503 el modelo esta saturado ("high demand"), muy comun en la capa
+    //       gratuita con los modelos mas nuevos
+    //   500 error puntual de Google
+    const otroModelo = [404, 429, 500, 503].includes(respuesta.status);
+
     if (respuesta.status === 404) {
-      // El modelo dejo de existir: se olvida el elegido para que la proxima
-      // llamada vuelva a preguntarle la lista a Google.
-      modeloResuelto = null;
-      throw Object.assign(
-        new Error(
-          `Gemini no reconoce el modelo "${modelo}".` +
-            (process.env.GEMINI_MODEL
-              ? " Lo fijaste con la variable GEMINI_MODEL; borrala para que se elija solo."
-              : " Se reintentara con otro en la siguiente pulsacion."),
-        ),
-        { status: 502 },
-      );
+      // Se olvida la lista para que la proxima llamada la pida de nuevo.
+      modelosResueltos = null;
     }
-    if (respuesta.status === 429) {
-      throw Object.assign(
-        new Error("Se agotó la cuota gratuita de Gemini por ahora. Intenta en un momento."),
-        { status: 429 },
-      );
-    }
-    throw Object.assign(new Error(`Gemini respondió ${respuesta.status}: ${detalle.slice(0, 300)}`), {
-      status: 502,
-    });
+
+    throw Object.assign(
+      new Error(`Gemini respondió ${respuesta.status} con "${modelo}": ${detalle.slice(0, 200)}`),
+      { status: respuesta.status, otroModelo },
+    );
   }
 
   const datos = await respuesta.json();
@@ -191,6 +192,53 @@ async function redactarConGemini(texto, contexto) {
     .map((p) => p.text || "")
     .join("")
     .trim();
+}
+
+/**
+ * Pide la redacción probando los modelos por orden.
+ *
+ * En la capa gratuita el modelo mejor valorado se satura a ratos y responde
+ * 503 "high demand". En vez de fallarle al técnico, se baja al siguiente
+ * candidato, que suele estar libre.
+ */
+async function redactarConGemini(texto, contexto) {
+  const modelos = await obtenerModelos();
+  let ultimoError = null;
+
+  for (const modelo of modelos) {
+    try {
+      const resultado = await pedirAGemini(modelo, texto, contexto);
+      if (resultado) {
+        // El que funciona pasa a ser el primero de la cola.
+        if (modelosResueltos && modelosResueltos[0] !== modelo) {
+          modelosResueltos = [modelo, ...modelosResueltos.filter((m) => m !== modelo)];
+        }
+        return resultado;
+      }
+      ultimoError = Object.assign(new Error(`"${modelo}" devolvió una respuesta vacía`), {
+        status: 502,
+        otroModelo: true,
+      });
+    } catch (error) {
+      ultimoError = error;
+      // Si el fallo es del texto (bloqueado, mal formado), no tiene sentido
+      // repetirlo con otro modelo.
+      if (!error.otroModelo) throw error;
+      console.warn(`"${modelo}" no respondió (${error.status}); se prueba el siguiente.`);
+    }
+  }
+
+  // Se acabaron los candidatos.
+  if (ultimoError && [429, 503].includes(ultimoError.status)) {
+    throw Object.assign(
+      new Error(
+        "El servicio gratuito de Gemini está saturado en este momento. " +
+          "Espera un minuto y vuelve a pulsar Mejorar.",
+      ),
+      { status: 503 },
+    );
+  }
+  throw ultimoError || new Error("No se pudo redactar el texto");
 }
 
 /* ------------------------------------------------------------------ */
@@ -242,7 +290,9 @@ export default async (request) => {
     // la limpieza básica local, así que basta con avisar.
     return Response.json(
       { error: "No hay ninguna clave configurada (GEMINI_API_KEY o ANTHROPIC_API_KEY)" },
-      { status: 503 },
+      // 501 y no 503: el cliente distingue "no esta configurado" (deja de
+      // insistir) de "esta saturado" (merece la pena reintentar).
+      { status: 501 },
     );
   }
 

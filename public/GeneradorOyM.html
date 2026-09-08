@@ -1778,23 +1778,55 @@
         const ENDPOINT_IA = '/.netlify/functions/mejorar-texto';
         let iaDisponible = null; // null = sin probar, false = no está publicada
 
+        // Devuelve un objeto que dice qué pasó, no solo el texto:
+        //   { texto }          redactado correctamente
+        //   { saturado: true } el servicio está lleno; es pasajero, se reintenta
+        //   { noDisponible }   no hay función publicada o no hay clave
+        //   { fallo }          cualquier otro problema, se cae al corrector local
+        //
+        // Antes cualquier error apagaba la IA para el resto de la sesión, así que
+        // una saturación pasajera de Gemini dejaba al técnico sin IA hasta que
+        // recargara la página.
         async function mejorarConIA(texto, contexto) {
-            if (iaDisponible === false) return null;
+            if (iaDisponible === false) return { noDisponible: true };
+
+            let respuesta;
             try {
-                const respuesta = await fetch(ENDPOINT_IA, {
+                respuesta = await fetch(ENDPOINT_IA, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ texto: texto, contexto: contexto })
                 });
-                if (!respuesta.ok) { iaDisponible = false; return null; }
-                const datos = await respuesta.json();
-                if (!datos || !datos.texto) { iaDisponible = false; return null; }
-                iaDisponible = true;
-                return String(datos.texto).trim();
             } catch (e) {
-                iaDisponible = false;
-                return null;
+                return { fallo: 'No hubo conexión con el servicio.' };
             }
+
+            if (respuesta.ok) {
+                try {
+                    const datos = await respuesta.json();
+                    if (datos && datos.texto) {
+                        iaDisponible = true;
+                        return { texto: String(datos.texto).trim() };
+                    }
+                } catch (e) { /* respuesta ilegible */ }
+                return { fallo: 'El servicio devolvió una respuesta vacía.' };
+            }
+
+            // Sin función publicada o sin clave configurada: no insistir más.
+            if (respuesta.status === 404 || respuesta.status === 501) {
+                iaDisponible = false;
+                return { noDisponible: true };
+            }
+
+            let mensaje = '';
+            try { mensaje = (await respuesta.json()).error || ''; } catch (e) {}
+
+            // Cuota agotada o modelo saturado: pasajero, vale la pena reintentar.
+            if (respuesta.status === 429 || respuesta.status === 503) {
+                return { saturado: true, fallo: mensaje };
+            }
+
+            return { fallo: mensaje };
         }
 
         // ---------- Corrector local (funciona siempre, sin internet) ----------
@@ -2014,12 +2046,26 @@
                     estado.textContent = 'Ordenando el texto…';
                     estado.className = 'voz-estado';
 
-                    let resultado = await mejorarConIA(original, etiqueta);
-                    let conIA = !!resultado;
-                    if (!resultado) resultado = mejorarLocal(original);
+                    const intento = await mejorarConIA(original, etiqueta);
 
-                    btnMejorar.classList.remove('trabajando');
-                    btnMejorar.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Mejorar';
+                    const restaurarBoton = () => {
+                        btnMejorar.classList.remove('trabajando');
+                        btnMejorar.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Mejorar';
+                    };
+
+                    // Saturación: no se toca el texto, para que el técnico pueda
+                    // volver a pulsar en un momento y obtener la versión buena.
+                    if (intento.saturado) {
+                        restaurarBoton();
+                        estado.textContent = intento.fallo ||
+                            'El servicio de IA está saturado. Espera un momento y vuelve a pulsar Mejorar.';
+                        estado.className = 'voz-estado error';
+                        return;
+                    }
+
+                    const conIA = !!intento.texto;
+                    const resultado = conIA ? intento.texto : mejorarLocal(original);
+                    restaurarBoton();
 
                     if (!resultado || resultado === original) {
                         estado.textContent = conIA
