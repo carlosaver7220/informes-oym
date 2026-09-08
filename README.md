@@ -44,15 +44,32 @@ Funciona por dos caminos:
 
 ### Activar la IA
 
-La función necesita una clave de la API de Anthropic, guardada **como variable
-de entorno en Netlify**, nunca dentro del repositorio:
+La función acepta dos proveedores y usa el primero que tenga clave. Las claves
+van **como variables de entorno en Netlify**, nunca dentro del repositorio:
 
-1. En Netlify: **Site configuration → Environment variables → Add a variable**
-2. Key: `ANTHROPIC_API_KEY`
-3. Value: la clave que empieza por `sk-ant-`
-4. Volver a desplegar (**Deploys → Trigger deploy → Deploy site**)
+| Variable | Proveedor | Costo |
+|---|---|---|
+| `GEMINI_API_KEY` | Google Gemini | Tiene capa gratuita |
+| `ANTHROPIC_API_KEY` | Claude | Por consumo, ~0,01 USD por pulsación |
 
-Si la variable no está, la aplicación sigue funcionando: usa la limpieza básica.
+**Opción gratuita (la que usamos):** saca la clave en
+[aistudio.google.com](https://aistudio.google.com) → *Get API key*. No pide
+tarjeta.
+
+Luego, en Netlify: **Site configuration → Environment variables → Add a
+variable**, con Key `GEMINI_API_KEY` y el valor de la clave. Después
+**Deploys → Trigger deploy → Deploy site**.
+
+Si ninguna variable está definida, la aplicación sigue funcionando: aplica la
+limpieza básica y avisa al técnico de que revise la redacción.
+
+### Cambiar de modelo sin tocar el código
+
+Si el proveedor retira un modelo, basta con definir otra variable de entorno:
+
+- `GEMINI_MODEL` — por defecto `gemini-2.0-flash`. Los modelos disponibles
+  aparecen en aistudio.google.com.
+- `ANTHROPIC_MODEL` — por defecto `claude-opus-5`.
 
 ## Desarrollo local
 
