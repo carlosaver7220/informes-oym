@@ -67,7 +67,7 @@ persona. El botón "Mejorar" lo redacta en el registro técnico del informe.
 Funciona por dos caminos:
 
 1. **Con IA** (el bueno). La página llama a `/.netlify/functions/mejorar-texto`,
-   que a su vez llama a la API de Claude. Entiende la frase, así que puede
+   que a su vez llama a la API de Gemini. Entiende la frase, así que puede
    reordenar ideas, separar oraciones y elegir el término correcto.
 2. **Limpieza básica sin conexión** (la red de seguridad). Si la función no
    responde, la página aplica un corrector local que solo hace cambios que no
@@ -77,32 +77,47 @@ Funciona por dos caminos:
 
 ### Activar la IA
 
-La función acepta dos proveedores y usa el primero que tenga clave. Las claves
-van **como variables de entorno en Netlify**, nunca dentro del repositorio:
-
-| Variable | Proveedor | Costo |
-|---|---|---|
-| `GEMINI_API_KEY` | Google Gemini | Tiene capa gratuita |
-| `ANTHROPIC_API_KEY` | Claude | Por consumo, ~0,01 USD por pulsación |
-
-**Opción gratuita (la que usamos):** saca la clave en
+La función usa **Google Gemini**, que tiene capa gratuita. Saca la clave en
 [aistudio.google.com](https://aistudio.google.com) → *Get API key*. No pide
 tarjeta.
+
+La clave va **como variable de entorno en Netlify**, nunca dentro del
+repositorio, con el nombre `GEMINI_API_KEY`.
 
 Luego, en Netlify: **Site configuration → Environment variables → Add a
 variable**, con Key `GEMINI_API_KEY` y el valor de la clave. Después
 **Deploys → Trigger deploy → Deploy site**.
 
-Si ninguna variable está definida, la aplicación sigue funcionando: aplica la
+Si la variable no está definida, la aplicación sigue funcionando: aplica la
 limpieza básica y avisa al técnico de que revise la redacción.
 
 ### Cambiar de modelo sin tocar el código
 
-Si el proveedor retira un modelo, basta con definir otra variable de entorno:
+La función pide a Google la lista de modelos vivos y elige sola, porque Google
+renombra y retira modelos cada pocos meses. Para forzar uno concreto, define
+`GEMINI_MODEL` en Netlify.
 
-- `GEMINI_MODEL` — por defecto `gemini-2.0-flash`. Los modelos disponibles
-  aparecen en aistudio.google.com.
-- `ANTHROPIC_MODEL` — por defecto `claude-opus-5`.
+### Cuando "Mejorar" deja de funcionar
+
+Desde fuera, tres averías distintas se parecen. Para distinguirlas, abre en el
+navegador:
+
+```
+https://informes-oym.netlify.app/.netlify/functions/mejorar-texto?diagnostico=1
+```
+
+Dice qué modelos ve la clave y qué contesta cada uno. No revela la clave ni
+ningún dato de los informes, y gasta una pizca de cuota.
+
+| Lo que devuelve | Qué pasa |
+|---|---|
+| `FALLÓ 401` | La clave está mal o la API no está habilitada |
+| `FALLÓ 429` | Se acabó la cuota gratuita del día; mañana vuelve sola |
+| `FALLÓ 503` | El modelo está saturado ahora mismo; reintenta en un minuto |
+| `OK` | Gemini responde: el problema está en otra parte |
+
+Mientras tanto la aplicación no se queda tirada: aplica su limpieza básica
+local y avisa al técnico de que revise la redacción.
 
 ## Desarrollo local
 

@@ -1576,6 +1576,32 @@
                 if (!on) interim.textContent = '';
             };
 
+            // Compara ignorando tildes, signos y mayúsculas: el motor devuelve
+            // la misma frase con puntuación distinta según la vez.
+            const comparable = (s) => s.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9ñ ]/g, ' ')
+                .replace(/\s+/g, ' ').trim();
+
+            // Añade una frase confirmada al final del campo.
+            const anadirAlTexto = (crudo) => {
+                const frase = crudo.trim();
+                if (!frase) return;
+
+                const previo = textarea.value.trimEnd();
+                const nueva = comparable(frase);
+
+                // Segunda red, por si el contador de índices no basta: cuando
+                // el reconocimiento se reinicia, los índices vuelven a cero y
+                // el motor repite la última frase. Solo se descartan frases
+                // con cuerpo; un "sí" o un "ok" repetidos pueden ser de verdad.
+                if (nueva.length >= 8 && comparable(previo).endsWith(nueva)) return;
+
+                const sep = previo === '' ? '' : (/[.!?]$/.test(previo) ? ' ' : '. ');
+                textarea.value = previo + sep + frase;
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+
             const api = {
                 detener() {
                     detenidoPorUsuario = true;
@@ -1594,21 +1620,40 @@
                 reconocimiento.continuous = true;
                 reconocimiento.interimResults = true;
 
+                // Índice del primer resultado que todavía no se ha escrito.
+                //
+                // `evento.results` es acumulativo durante toda la sesión de
+                // escucha, y Chrome vuelve a entregar resultados que ya eran
+                // definitivos: al confirmar una frase, y sobre todo cuando el
+                // reconocimiento se reinicia solo tras un silencio. Sin llevar
+                // la cuenta, cada reentrega volvía a añadir la misma frase, y
+                // el técnico acababa con ella repetida cinco o seis veces.
+                let entregados = 0;
+
                 reconocimiento.onresult = (evento) => {
                     let parcial = '';
+
                     for (let i = evento.resultIndex; i < evento.results.length; i++) {
-                        const texto = evento.results[i][0].transcript;
-                        if (evento.results[i].isFinal) {
-                            const previo = textarea.value.trimEnd();
-                            const sep = previo === '' ? '' : (/[.!?]$/.test(previo) ? ' ' : '. ');
-                            textarea.value = previo + sep + texto.trim();
-                            textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                        } else {
-                            parcial += texto;
+                        const resultado = evento.results[i];
+
+                        if (!resultado.isFinal) {
+                            parcial += resultado[0].transcript;
+                            continue;
                         }
+
+                        // Ya se escribió en una entrega anterior.
+                        if (i < entregados) continue;
+                        entregados = i + 1;
+
+                        anadirAlTexto(resultado[0].transcript);
                     }
+
                     interim.textContent = parcial ? '… ' + parcial : 'Escuchando…';
                 };
+
+                // Se reinicia la cuenta: tras un reinicio, los índices vuelven
+                // a empezar en cero y el motor suele repetir la última frase.
+                reconocimiento.onstart = () => { entregados = 0; };
 
                 reconocimiento.onerror = (evento) => {
                     if (evento.error === 'no-speech' || evento.error === 'aborted') return;
@@ -1847,6 +1892,57 @@
             [/(\d+(?:[.,]\d+)?)\s*mil[ií]metros\b/gi, '$1 mm']
         ];
 
+        /**
+         * Quita repeticiones seguidas, de frases enteras y no solo de palabras.
+         *
+         * El dictado del navegador a veces confirma la misma frase varias
+         * veces, así que el técnico se encontraba con "se revisó el tablero"
+         * escrito cinco o seis veces. El origen ya está corregido, pero esto
+         * limpia lo que quedó escrito antes y cualquier tartamudeo del motor.
+         *
+         * Va de la repetición más larga a la más corta: así el bloque entero
+         * cae de una vez, en vez de deshacerse palabra por palabra.
+         */
+        function quitarRepeticiones(texto) {
+            const palabras = texto.split(/\s+/).filter(Boolean);
+
+            // Se compara sin tildes, signos ni mayúsculas: el motor devuelve
+            // la misma frase puntuada de forma distinta según la vez.
+            const clave = (p) => p.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9ñ]/g, '');
+            const claves = palabras.map(clave);
+
+            const MAX_FRASE = 8; // palabras
+            const inicio = Math.min(MAX_FRASE, Math.floor(palabras.length / 2));
+
+            for (let n = inicio; n >= 1; n--) {
+                let i = 0;
+                while (i + 2 * n <= palabras.length) {
+                    let iguales = true;
+                    for (let k = 0; k < n; k++) {
+                        const a = claves[i + k];
+                        // Sin clave = solo signos; no cuenta como repetición.
+                        if (!a || a !== claves[i + n + k]) { iguales = false; break; }
+                    }
+
+                    // Las cifras nunca se tocan: "3 3" puede ser una medida
+                    // real, y el informe no puede alterar los números.
+                    if (iguales && n === 1 && /^\d+$/.test(claves[i])) iguales = false;
+
+                    if (iguales) {
+                        palabras.splice(i + n, n);
+                        claves.splice(i + n, n);
+                        // No se avanza: puede haber una tercera copia detrás.
+                    } else {
+                        i++;
+                    }
+                }
+            }
+
+            return palabras.join(' ');
+        }
+
         function mejorarLocal(texto) {
             let t = ' ' + texto.replace(/\s+/g, ' ').trim() + ' ';
 
@@ -1856,8 +1952,11 @@
                 t = t.replace(re, '$1');
             });
 
-            // 2. Palabras repetidas seguidas ("el el módulo")
-            t = t.replace(/\b(\w+)(\s+\1\b)+/gi, '$1');
+            // 2. Repeticiones seguidas, de una palabra ("el el módulo") o de
+            //    una frase entera, que es lo que deja el dictado al confirmar
+            //    dos veces. El \w de antes no reconocía tildes ni la ñ, así
+            //    que "módulo módulo" se le escapaba.
+            t = ' ' + quitarRepeticiones(t) + ' ';
 
             // 3. Primera persona -> impersonal, vocabulario técnico y unidades
             REGLAS_VERBOS.forEach(r => { t = t.replace(r.deteccion, r.singular); });

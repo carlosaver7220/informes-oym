@@ -6,20 +6,18 @@
  * se da cuenta sola y aplica su limpieza básica local, así que la herramienta
  * nunca se queda sin funcionar.
  *
- * Funciona con dos proveedores; usa el primero que tenga clave:
- *
- *   1. GEMINI_API_KEY    Google Gemini. Tiene capa gratuita.
- *                        Clave en https://aistudio.google.com -> Get API key
- *   2. ANTHROPIC_API_KEY Claude. Se cobra por consumo (unos 0,01 USD por
- *                        pulsación). Clave en https://console.anthropic.com
- *
- * Las claves se definen como variables de entorno en Netlify
+ * Usa Google Gemini, que tiene capa gratuita. La clave va en
+ * GEMINI_API_KEY, como variable de entorno en Netlify
  * (Site configuration -> Environment variables), NUNCA en el repositorio.
+ * Se saca en https://aistudio.google.com -> Get API key.
  *
- * El modelo de Gemini se elige solo a partir de la lista que publica Google.
- * Variables opcionales para forzar uno concreto:
- *   GEMINI_MODEL     desactiva la eleccion automatica
- *   ANTHROPIC_MODEL  por defecto "claude-opus-5"
+ * El modelo se elige solo a partir de la lista que publica Google, porque
+ * Google renombra y retira modelos cada pocos meses. GEMINI_MODEL desactiva
+ * esa eleccion automatica y fuerza uno concreto.
+ *
+ * Con GET ?diagnostico=1 la funcion cuenta que modelos ve y como responde
+ * cada uno, sin revelar la clave. Sirve para saber si el problema es cuota
+ * agotada, saturacion o una clave mala.
  *
  * Queda publicada en /.netlify/functions/mejorar-texto
  */
@@ -303,54 +301,76 @@ async function redactarConGemini(texto, contexto) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Claude (de pago)                                                    */
-/* ------------------------------------------------------------------ */
-async function redactarConClaude(texto, contexto) {
-  // Se importa solo si hace falta: así el camino de Gemini no depende
-  // de que el SDK esté instalado.
-  const { default: Anthropic } = await import("@anthropic-ai/sdk");
-  const client = new Anthropic();
 
-  const respuesta = await client.messages.create({
-    model: process.env.ANTHROPIC_MODEL || "claude-opus-5",
-    max_tokens: 4000,
-    system: INSTRUCCIONES,
-    // Tarea corta y acotada: no necesita razonamiento profundo.
-    output_config: { effort: "low" },
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    messages: [{ role: "user", content: construirPeticion(texto, contexto) }],
-  });
-
-  if (respuesta.stop_reason === "refusal") {
-    throw Object.assign(new Error("El modelo no pudo procesar este texto"), { status: 422 });
+/**
+ * Modo diagnóstico: GET ?diagnostico=1
+ *
+ * Cuenta qué modelos ve la clave y qué contesta cada uno de los tres
+ * primeros ante una petición mínima. Sirve para distinguir de un vistazo
+ * las tres averías que se parecen desde fuera:
+ *
+ *   401  la clave está mal o la API no está habilitada
+ *   429  se acabó la cuota gratuita del día
+ *   503  el modelo está saturado ahora mismo
+ *
+ * No devuelve la clave ni ningún dato del informe, y gasta muy poca cuota
+ * (pide un "ok" de un token). Se puede llamar desde el navegador.
+ */
+async function diagnosticar() {
+  if (!process.env.GEMINI_API_KEY) {
+    return { clave: "no configurada" };
   }
 
-  return respuesta.content
-    .filter((bloque) => bloque.type === "text")
-    .map((bloque) => bloque.text)
-    .join("")
-    .trim();
+  const informe = {
+    clave: `configurada (${process.env.GEMINI_API_KEY.length} caracteres)`,
+    modeloForzado: process.env.GEMINI_MODEL || null,
+  };
+
+  let modelos;
+  try {
+    // Se olvida lo memorizado para que el diagnóstico mida de verdad.
+    modelosResueltos = null;
+    modelos = await obtenerModelos();
+    informe.modelosElegidos = modelos;
+  } catch (error) {
+    informe.listaDeModelos = `FALLÓ (${error.status}): ${error.message}`;
+    return informe;
+  }
+
+  informe.pruebas = [];
+  for (const modelo of modelos.slice(0, 3)) {
+    const t0 = Date.now();
+    try {
+      const texto = await pedirAGemini(modelo, "Responde solo: ok", "", TIMEOUT_MODELO_MS);
+      informe.pruebas.push({ modelo, resultado: "OK", ms: Date.now() - t0, devolvio: texto.slice(0, 40) });
+    } catch (error) {
+      informe.pruebas.push({
+        modelo,
+        resultado: `FALLÓ ${error.status}`,
+        ms: Date.now() - t0,
+        detalle: String(error.message).slice(0, 260),
+      });
+    }
+  }
+  return informe;
 }
 
-/* ------------------------------------------------------------------ */
-
 export default async (request) => {
+  if (request.method === "GET" && new URL(request.url).searchParams.get("diagnostico") === "1") {
+    return Response.json(await diagnosticar(), {
+      headers: { "Cache-Control": "no-store" },
+    });
+  }
+
   if (request.method !== "POST") {
     return Response.json({ error: "Usa POST" }, { status: 405 });
   }
 
-  const redactar = process.env.GEMINI_API_KEY
-    ? redactarConGemini
-    : process.env.ANTHROPIC_API_KEY
-      ? redactarConClaude
-      : null;
-
-  if (!redactar) {
+  if (!process.env.GEMINI_API_KEY) {
     // La aplicación interpreta cualquier error como "no disponible" y pasa a
     // la limpieza básica local, así que basta con avisar.
     return Response.json(
-      { error: "No hay ninguna clave configurada (GEMINI_API_KEY o ANTHROPIC_API_KEY)" },
+      { error: "No hay clave configurada (GEMINI_API_KEY)" },
       // 501 y no 503: el cliente distingue "no esta configurado" (deja de
       // insistir) de "esta saturado" (merece la pena reintentar).
       { status: 501 },
@@ -378,7 +398,7 @@ export default async (request) => {
   }
 
   try {
-    const mejorado = await redactar(texto, contexto);
+    const mejorado = await redactarConGemini(texto, contexto);
     if (!mejorado) {
       return Response.json({ error: "El modelo devolvió una respuesta vacía" }, { status: 502 });
     }
