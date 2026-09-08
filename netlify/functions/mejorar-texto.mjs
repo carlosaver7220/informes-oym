@@ -54,10 +54,86 @@ const construirPeticion = (texto, contexto) =>
 /* ------------------------------------------------------------------ */
 /* Google Gemini (capa gratuita)                                       */
 /* ------------------------------------------------------------------ */
+
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
+
+/**
+ * Elige el mejor modelo de la lista que publica Google.
+ *
+ * Se hace así porque Google renombra y retira modelos cada pocos meses, y
+ * dejar el nombre escrito a mano hace que la herramienta deje de funcionar
+ * sin aviso (paso con "gemini-2.0-flash"). Preferimos los "flash": son los
+ * rapidos y los que entran en la capa gratuita, y para redactar un parrafo
+ * van de sobra.
+ */
+function elegirModelo(nombres) {
+  // Modelos que no sirven para escribir texto.
+  const descartar = /(vision|embedding|aqa|imagen|image|tts|audio|live|learnlm|gemma)/i;
+
+  const puntuar = (n) => {
+    let p = 0;
+    if (/flash/i.test(n)) p += 1000; // rapido y barato, es lo que necesitamos
+    if (/latest/i.test(n)) p += 100; // alias estable que Google mantiene al dia
+    if (/preview|exp/i.test(n)) p -= 500; // los experimentales desaparecen
+    const version = n.match(/(\d+)\.(\d+)/); // "2.5" -> 25
+    if (version) p += Number(version[1]) * 10 + Number(version[2]);
+    return p;
+  };
+
+  return nombres
+    .filter((n) => !descartar.test(n))
+    .sort((a, b) => puntuar(b) - puntuar(a))[0];
+}
+
+// Se recuerda entre invocaciones mientras el contenedor siga vivo, para no
+// pedir la lista en cada pulsacion del boton.
+let modeloResuelto = null;
+
+async function obtenerModelo() {
+  if (process.env.GEMINI_MODEL) return process.env.GEMINI_MODEL;
+  if (modeloResuelto) return modeloResuelto;
+
+  const respuesta = await fetch(`${GEMINI_BASE}/models?pageSize=200`, {
+    headers: { "x-goog-api-key": process.env.GEMINI_API_KEY },
+  });
+
+  if (!respuesta.ok) {
+    const detalle = await respuesta.text();
+    throw Object.assign(
+      new Error(
+        respuesta.status === 400 || respuesta.status === 403
+          ? "La clave GEMINI_API_KEY no es valida o no tiene habilitada la API. " +
+            "Revisala en aistudio.google.com."
+          : `Google respondio ${respuesta.status} al pedir la lista de modelos: ${detalle.slice(0, 200)}`,
+      ),
+      { status: respuesta.status === 403 ? 401 : 502 },
+    );
+  }
+
+  const datos = await respuesta.json();
+  const nombres = (datos.models || [])
+    .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+    .map((m) => String(m.name).replace(/^models\//, ""));
+
+  const elegido = elegirModelo(nombres);
+  if (!elegido) {
+    throw Object.assign(
+      new Error(
+        "Tu clave de Gemini no da acceso a ningun modelo de texto. " +
+          `Modelos visibles: ${nombres.slice(0, 10).join(", ") || "ninguno"}`,
+      ),
+      { status: 502 },
+    );
+  }
+
+  modeloResuelto = elegido;
+  console.log("Modelo de Gemini elegido automaticamente:", elegido);
+  return elegido;
+}
+
 async function redactarConGemini(texto, contexto) {
-  const modelo = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-  const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`;
+  const modelo = await obtenerModelo();
+  const url = `${GEMINI_BASE}/models/${modelo}:generateContent`;
 
   const respuesta = await fetch(url, {
     method: "POST",
@@ -77,10 +153,15 @@ async function redactarConGemini(texto, contexto) {
   if (!respuesta.ok) {
     const detalle = await respuesta.text();
     if (respuesta.status === 404) {
+      // El modelo dejo de existir: se olvida el elegido para que la proxima
+      // llamada vuelva a preguntarle la lista a Google.
+      modeloResuelto = null;
       throw Object.assign(
         new Error(
-          `Gemini no reconoce el modelo "${modelo}". Cambia la variable ` +
-            `GEMINI_MODEL en Netlify por uno disponible en aistudio.google.com.`,
+          `Gemini no reconoce el modelo "${modelo}".` +
+            (process.env.GEMINI_MODEL
+              ? " Lo fijaste con la variable GEMINI_MODEL; borrala para que se elija solo."
+              : " Se reintentara con otro en la siguiente pulsacion."),
         ),
         { status: 502 },
       );
