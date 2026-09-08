@@ -8,6 +8,10 @@ desde el propio celular.
 
 ```
 public/GeneradorOyM.html        La aplicación completa (HTML + CSS + JS)
+public/manifest.json            Datos de la app instalable (nombre, iconos, color)
+public/sw.js                    Service worker: solo habilita el botón "Instalar"
+public/icons/                   Iconos de la app, recortados del logo
+public/img/logo.png             Logo de SmartEnergy que se ve en la cabecera
 netlify/functions/              Funciones serverless
   mejorar-texto.mjs             Redacta con IA el texto dictado por el técnico
 netlify.toml                    Configuración del despliegue
@@ -25,6 +29,35 @@ git add .
 git commit -m "Describe aquí el cambio"
 git push
 ```
+
+## Instalarla en el celular
+
+La aplicación es una PWA: se instala desde el navegador y luego se abre en su
+propia ventana, sin la barra de direcciones, con su icono en la pantalla de
+inicio.
+
+- **Android (Chrome):** menú ⋮ → *Instalar aplicación*. También aparece solo
+  como un aviso al pie después de un par de visitas.
+- **iPhone (Safari):** botón compartir → *Añadir a pantalla de inicio*.
+
+El `sw.js` **no guarda nada en caché a propósito**. Existe solo porque Chrome
+exige un service worker para ofrecer la instalación. Los informes se generan
+con conexión: es lo que hace funcionar el botón "Mejorar", y el sitio vive en
+Netlify. Así nadie se queda con una versión vieja de la aplicación.
+
+## Dónde se guardan los informes
+
+Nada sale del celular todavía.
+
+- **El índice** (nombre, fecha, si ya se generó el PDF) va en `localStorage`,
+  para que la lista de inicio se pinte al instante.
+- **El contenido completo, fotos incluidas**, va en IndexedDB. Las fotos no
+  caben en `localStorage`, y son justo lo que no se puede recuperar si el
+  navegador se cierra mientras el técnico está tomando una: el informe se
+  guarda solo con cada tecleo y cada vez que la app pasa a segundo plano.
+
+Todo pasa por `leerInforme` / `escribirInforme` / `eliminarInforme`. El día que
+entre Supabase se sustituyen esas tres funciones y la interfaz no se entera.
 
 ## El botón "Mejorar"
 

@@ -18,3 +18,27 @@
 
 [functions]
   node_bundler = "esbuild"
+
+# El service worker nunca se cachea: si el navegador se queda con una copia
+# vieja, el técnico puede seguir viendo una versión antigua de la app durante
+# días sin enterarse.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Los iconos y el logo sí: llevan nombre fijo y cambian muy de vez en cuando.
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
