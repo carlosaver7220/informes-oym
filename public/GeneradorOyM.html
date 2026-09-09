@@ -829,6 +829,7 @@
             border-radius: 999px;
         }
         .et-antes { background: #FEF3C7; color: #92400E; }
+        .et-portada { background: #E0E7FF; color: #3730A3; }
         .et-despues { background: #D1FAE5; color: #065F46; }
 
         .cab-galeria .cuenta {
@@ -1128,6 +1129,21 @@
                     <div class="con-icono">
                         <svg class="ic ic-sm"><use href="#i-calendario"/></svg>
                         <input type="date" id="fecha" class="control">
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label>Foto de portada</label>
+                    <div class="galeria galeria-portada" data-momento="portada" data-una-sola>
+                        <div class="cab-galeria">
+                            <span class="etiqueta et-portada">Portada</span>
+                            <span class="cuenta"></span>
+                            <button type="button" class="bi image-upload" aria-label="Elegir foto de portada">
+                                <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                            </button>
+                            <input type="file" accept="image/*" hidden>
+                        </div>
+                        <div class="fotos image-preview-container"></div>
                     </div>
                 </div>
 
@@ -2747,8 +2763,11 @@
             }));
 
             const tot = document.getElementById('totalizador');
+            const portada = recogerFotos(
+                document.querySelector('.galeria-portada .image-preview-container'));
 
             return {
+                fotoPortada: portada[0] || null,
                 id: informeActivo,
                 v: 4,
                 totalizador: {
@@ -2869,6 +2888,11 @@
                 pintarFotos(galeriaDe(el, 'antes'), a.fotosAntes || a.fotos);
                 pintarFotos(galeriaDe(el, 'despues'), a.fotosDespues);
             });
+
+            if (informe.fotoPortada) {
+                pintarFotos(document.querySelector('.galeria-portada .image-preview-container'),
+                            [informe.fotoPortada]);
+            }
 
             const tot = document.getElementById('totalizador');
             conectarAC(tot, informe.totalizador || {});
@@ -3020,6 +3044,7 @@
             initAccordions();
             loadActivitiesIntoSelectors();
             initEvents();
+            conectarSubidaFotos(document.getElementById('form-informe'));
             inicializarVoz(document);
 
             // Cualquier tecleo o cambio guarda el informe en curso.
@@ -3332,6 +3357,8 @@
                 boton.addEventListener('click', () => input.click());
                 input.addEventListener('change', async (e) => {
                     boton.classList.add('trabajando');
+                    // La portada admite una sola foto: la nueva reemplaza.
+                    if (galeria.hasAttribute('data-una-sola')) destino.innerHTML = '';
                     await agregarImagenes(e.target.files, destino);
                     boton.classList.remove('trabajando');
                     e.target.value = ''; // permite volver a elegir la misma foto
@@ -3856,14 +3883,15 @@
             // celular. Recortarlas a formato apaisado se llevaba mas de la
             // mitad de la imagen.
             const PROPORCION = 3 / 4;
-            const ANCHO_CELDA = 58;   // 58 x 77,3 mm: dos filas caben por pagina
+            // 50 x 66,7 mm. Con el encabezado y el pie quedan 225 mm utiles:
+            // a este tamano una fila cuesta 75 mm y caben tres por pagina, en
+            // vez de dos, que era lo que dejaba esos huecos al pie.
+            const ANCHO_CELDA = 50;
             const ALTO_CELDA = ANCHO_CELDA / PROPORCION;
 
             // El par va centrado en la pagina, como en el informe de
-            // referencia, no pegado al margen: media pagina vacia a la
-            // derecha se veria peor que un bloque centrado.
-            const ANCHO_PAR = ANCHO_CELDA * COLUMNAS + HUECO * (COLUMNAS - 1);
-            const INICIO_X = margin + (contentWidth - ANCHO_PAR) / 2;
+            // referencia. El x concreto se calcula por fila, porque una fila
+            // puede ir encogida para no dejar la pagina a medias.
 
             // Recorte al centro a una proporcion cualquiera. Lo usa la
             // franja de la portada, que es mucho mas ancha que alta.
@@ -3953,52 +3981,69 @@
             };
 
             // `fotos` es una lista de { img, momento, pie }.
+            // Lo que ocupa una fila ademas de la foto: el rotulo y su aire.
+            const ALTO_ROTULO = 9;
+
+            // Cuanto se deja encoger una fila con tal de no saltar de pagina.
+            // Por debajo de esto la diferencia ya se notaria al hojear.
+            const ENCOGIDO_MINIMO = 0.82;
+
             const dibujarFotos = async (fotos) => {
                 if (!fotos.length) return;
 
                 for (let i = 0; i < fotos.length; i += COLUMNAS) {
                     const fila = fotos.slice(i, i + COLUMNAS);
 
-                    // La fila entra entera o pasa de pagina: nunca se parte
-                    // una foto de su rotulo.
-                    await asegurarEspacio(ALTO_CELDA + 9);
+                    // Si la fila no cabe pero le falta poco, se encoge en vez
+                    // de saltar: saltar dejaba media pagina en blanco justo
+                    // donde cabian las fotos.
+                    let escala = 1;
+                    const disponible = LIMITE_INFERIOR - yPos;
+                    if (ALTO_CELDA + ALTO_ROTULO > disponible) {
+                        const cabe = (disponible - ALTO_ROTULO) / ALTO_CELDA;
+                        if (cabe >= ENCOGIDO_MINIMO) {
+                            escala = cabe;
+                        } else {
+                            nuevaPagina();
+                            yPos = TOPE_SUPERIOR;
+                        }
+                    }
+
+                    const ancho = ANCHO_CELDA * escala;
+                    const alto = ALTO_CELDA * escala;
+                    const inicioX = margin + (contentWidth -
+                        (ancho * COLUMNAS + HUECO * (COLUMNAS - 1))) / 2;
 
                     fila.forEach((foto, j) => {
-                        const x = INICIO_X + j * (ANCHO_CELDA + HUECO);
+                        const x = inicioX + j * (ancho + HUECO);
                         try {
-                            doc.addImage(recortar(foto.img), 'JPEG',
-                                         x, yPos, ANCHO_CELDA, ALTO_CELDA);
+                            doc.addImage(recortar(foto.img), 'JPEG', x, yPos, ancho, alto);
                             doc.setDrawColor(222, 226, 232);
                             doc.setLineWidth(0.2);
-                            doc.rect(x, yPos, ANCHO_CELDA, ALTO_CELDA);
+                            doc.rect(x, yPos, ancho, alto);
                         } catch (error) {
                             console.error('Error agregando imagen:', error);
                         }
                         fotosDibujadas++;
                     });
 
-                    yPos += ALTO_CELDA + 1.5;
+                    yPos += alto + 1.5;
 
                     let maxLineas = 0;
                     fila.forEach((foto, j) => {
-                        const centroX = INICIO_X + j * (ANCHO_CELDA + HUECO) + ANCHO_CELDA / 2;
+                        const centroX = inicioX + j * (ancho + HUECO) + ancho / 2;
                         maxLineas = Math.max(maxLineas,
-                            rotularFoto(foto.momento, foto.pie, centroX, ANCHO_CELDA));
+                            rotularFoto(foto.momento, foto.pie, centroX, ancho));
                     });
-                    yPos += maxLineas * 3.3 + 4;
+                    yPos += maxLineas * 3.3 + 3;
 
                     reportarProgreso();
                     await new Promise(r => setTimeout(r, 0));
                 }
             };
 
-            // Reune las fotos de un bloque EMPAREJADAS: cada fila lleva un
-            // antes y su despues, uno al lado del otro. Es la comparacion que
-            // pedia el revisor; puestas en bloques separados habia que pasar
-            // paginas para contrastar el mismo punto.
-            //
-            // Si un grupo tiene mas fotos que el otro, las sobrantes van
-            // detras en filas propias, cada una con su rotulo.
+            // Reune las fotos de un bloque: primero el grupo del antes,
+            // despues el del despues. Cada foto lleva su rotulo debajo.
             const recogerDelBloque = (bloque) => {
                 const leer = (clave, rotulo) => {
                     const cont = bloque.querySelector(
@@ -4018,19 +4063,19 @@
                         .filter(Boolean);
                 };
 
-                const antes = leer('antes', 'Antes');
-                const despues = leer('despues', 'Después');
-
-                const lista = [];
-                const pares = Math.min(antes.length, despues.length);
-                for (let i = 0; i < pares; i++) {
-                    lista.push(antes[i], despues[i]);
-                }
-                return lista.concat(antes.slice(pares), despues.slice(pares));
+                // Agrupadas: primero todas las del antes, luego las del
+                // despues. Intercalarlas ponia una de cada en la misma fila,
+                // y se lee mejor el estado inicial completo y luego el final.
+                return leer('antes', 'Antes').concat(leer('despues', 'Después'));
             };
 
+            // Cada grupo se dibuja por separado, para que ninguna fila
+            // mezcle un antes con un despues: se leen como dos bloques,
+            // "antes | antes" y luego "despues | despues".
             const dibujarGalerias = async (bloque) => {
-                await dibujarFotos(recogerDelBloque(bloque));
+                const fotos = recogerDelBloque(bloque);
+                await dibujarFotos(fotos.filter(f => f.momento === 'Antes'));
+                await dibujarFotos(fotos.filter(f => f.momento !== 'Antes'));
             };
 
             // ----------------------------------------------------------
@@ -4203,10 +4248,12 @@
                 doc.text('SmartEnergy Ing', pageWidth / 2, ARRIBA_LOGO + 12, { align: 'center' });
             }
 
-            // La franja usa la primera foto del informe, que suele ser la
-            // panoramica de la planta. Si no hay ninguna, queda el azul.
+            // La franja usa la foto que el tecnico eligio como portada.
+            // Antes cogia la primera del informe, que podia ser cualquier
+            // cosa: un primer plano de un breaker sulfatado, por ejemplo.
             const ALTO_FRANJA = 105;
-            const primeraFoto = document.querySelector('#pagina-informe .image-preview-item img');
+            const primeraFoto = document.querySelector(
+                '.galeria-portada .image-preview-item img');
 
             doc.setFillColor(26, 54, 93);
             doc.rect(0, bajoLogo, pageWidth, ALTO_FRANJA, 'F');
@@ -4220,12 +4267,12 @@
                 }
             }
 
-            let textoY = bajoLogo + ALTO_FRANJA + 18;
+            let textoY = bajoLogo + ALTO_FRANJA + 16;
 
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10.5);
             doc.setTextColor(17, 24, 39);
-            doc.text('ENERGÍA SOLAR FOTOVOLTAICA', margenPortada, textoY);
+            doc.text('OPERACIÓN Y MANTENIMIENTO', margenPortada, textoY);
             textoY += 6;
 
             doc.text('Proyecto:', margenPortada, textoY);
@@ -4234,13 +4281,26 @@
             doc.setFont('helvetica', 'normal');
             const lineasNombre = doc.splitTextToSize(proyectoNombre, pageWidth - margenPortada * 2);
             doc.text(lineasNombre, margenPortada, textoY);
-            textoY += lineasNombre.length * 5.5 + 10;
+            textoY += lineasNombre.length * 5.5 + 3;
 
+            // Ubicacion, fecha y autor, uno bajo otro y pegados al nombre.
+            // Antes la ubicacion y la fecha compartian linea y el bloque
+            // quedaba suelto, muy separado del proyecto.
             doc.setFontSize(9.5);
-            doc.setTextColor(74, 85, 104);
-            doc.text((ubicacion || 'Sin especificar') + ', ' + fechaLegible, margenPortada, textoY);
-            textoY += 5.5;
-            doc.text('Realizado por: ' + tecnicoNombre, margenPortada, textoY);
+            const dato = (rotulo, valor) => {
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(17, 24, 39);
+                doc.text(rotulo, margenPortada, textoY);
+                const sangria = doc.getTextWidth(rotulo) + 1.5;
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(74, 85, 104);
+                doc.text(String(valor), margenPortada + sangria, textoY);
+                textoY += 5;
+            };
+
+            dato('Ubicación:', ubicacion || 'Sin especificar');
+            dato('Fecha:', fechaLegible);
+            dato('Realizado por:', tecnicoNombre);
 
             // ==========================================================
             // A partir de aqui, paginas de contenido. El encabezado y el pie
