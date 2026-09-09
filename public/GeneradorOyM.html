@@ -538,7 +538,7 @@
             flex: 1;
             font-size: 0.875rem;
             font-weight: 600;
-            color: var(--azul);
+            color: var(--tinta);
             padding-top: 0.15rem;
         }
         .descripcion {
@@ -558,31 +558,6 @@
         }
         .acciones .separador { flex: 1; }
 
-        /* Selector de "fotos por fila", aparece solo cuando hay fotos */
-        .por-fila {
-            display: none;
-            align-items: center;
-            gap: 0.25rem;
-            height: 36px;
-            padding: 0 0.375rem 0 0.5rem;
-            border: 1px solid var(--linea);
-            border-radius: var(--r-sm);
-            color: var(--gris);
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .por-fila.visible { display: flex; }
-        .por-fila select {
-            border: 0;
-            background: none;
-            font: inherit;
-            font-weight: 700;
-            color: var(--tinta);
-            padding: 0 0.125rem;
-            appearance: none;
-            text-align: center;
-        }
-        .por-fila select:focus { outline: none; }
 
         /* Texto provisional del dictado */
         .voz-interim {
@@ -827,6 +802,169 @@
         .dialogo .botones { display: flex; gap: 0.5rem; }
         .dialogo .botones .btn { flex: 1; }
 
+
+        /* ==========================================================
+           GALERIAS ANTES / DESPUES
+           El jefe no podia distinguir el estado inicial del final:
+           ahora son dos cajas separadas y rotuladas, y el PDF las
+           saca bajo esos mismos titulos.
+           ========================================================== */
+        .galerias { margin-top: 0.5rem; display: grid; gap: 0.5rem; }
+
+        .galeria {
+            border: 1px solid var(--linea);
+            border-radius: var(--r-sm);
+            padding: 0.4rem 0.5rem 0.5rem;
+            background: #FCFCFD;
+        }
+
+        .cab-galeria { display: flex; align-items: center; gap: 0.4rem; }
+
+        .cab-galeria .etiqueta {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            padding: 0.15rem 0.45rem;
+            border-radius: 999px;
+        }
+        .et-antes { background: #FEF3C7; color: #92400E; }
+        .et-despues { background: #D1FAE5; color: #065F46; }
+
+        .cab-galeria .cuenta {
+            flex: 1;
+            font-size: 0.6875rem;
+            color: var(--gris-claro);
+        }
+
+        .galeria .fotos { margin-top: 0.5rem; }
+        .galeria .fotos:empty { margin-top: 0; }
+
+        /* ==========================================================
+           MEDICIONES ELECTRICAS
+           Antes se entregaban como fotos del multimetro, sin decir a
+           que string pertenecia cada lectura. Ahora son datos.
+           ========================================================== */
+        .sub-bloque {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--gris);
+            margin: 0.75rem 0 0.4rem;
+        }
+        .sub-bloque::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--linea);
+        }
+
+        .string-fila {
+            border: 1px solid var(--linea);
+            border-radius: var(--r-sm);
+            padding: 0.5rem;
+            margin-bottom: 0.4rem;
+            background: var(--panel);
+        }
+        .string-fila .cab {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 0.4rem;
+        }
+
+
+        /* Rejilla de medidas: etiqueta + antes + despues.
+           Con 3 columnas entra sin apreturas incluso a 320 px. */
+        .rejilla-medidas {
+            display: grid;
+            grid-template-columns: minmax(58px, auto) 1fr 1fr;
+            gap: 0.3rem;
+            align-items: center;
+        }
+        .rejilla-medidas .cabecera {
+            font-size: 0.625rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--gris-claro);
+            text-align: center;
+        }
+        .rejilla-medidas .cabecera.izq { text-align: left; }
+        .rejilla-medidas .rotulo {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gris);
+        }
+        .rejilla-medidas .medida {
+            width: 100%;
+            min-height: 34px;
+            padding: 0.3rem 0.4rem;
+            border: 1px solid var(--linea);
+            border-radius: var(--r-sm);
+            font-size: 16px; /* iOS no hace zoom */
+            font-family: inherit;
+            text-align: center;
+            color: var(--tinta);
+            background: var(--panel);
+        }
+        .rejilla-medidas .medida:focus {
+            outline: none;
+            border-color: var(--azul);
+            box-shadow: 0 0 0 2px rgba(1, 87, 235, .12);
+        }
+        .rejilla-medidas .medida.antes { background: #FFFBEB; }
+        .rejilla-medidas .medida.despues { background: #F0FDF4; }
+
+        .casilla {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin: 0.5rem 0;
+            font-size: 0.8125rem;
+            color: var(--gris);
+            cursor: pointer;
+        }
+        .casilla input {
+            width: 18px; height: 18px;
+            accent-color: var(--azul);
+            flex: none;
+        }
+
+        .string-fila .cab .rot-string {
+            font-size: 0.8125rem;
+            font-weight: 600;
+        }
+        .string-fila .cab .num-string {
+            width: 54px;
+            min-height: 32px;
+            padding: 0.25rem;
+            border: 1px solid var(--linea);
+            border-radius: var(--r-sm);
+            font: inherit;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            color: var(--tinta);
+            background: var(--panel);
+        }
+        .string-fila .cab .num-string:focus {
+            outline: none;
+            border-color: var(--azul);
+        }
+        .string-fila .cab { gap: 0.5rem; }
+        .string-fila .cab .quitar-string { margin-left: auto; }
+
+        .inversor-med { background: var(--fondo); }
+        .inversor-med .nombre-inversor {
+            font-size: 0.9375rem;
+            color: var(--tinta);
+        }
+
         .oculto { display: none !important; }
     </style>
 </head>
@@ -1054,6 +1192,68 @@
                 </div>
             </section>
 
+            <!-- Mediciones eléctricas -->
+            <section class="tarjeta seccion">
+                <button type="button" class="cab-seccion" aria-expanded="false" aria-controls="cuerpo-mediciones">
+                    <svg class="ic"><use href="#i-rayo"/></svg>
+                    <h2>Mediciones eléctricas</h2>
+                    <span class="globo" id="globo-mediciones">0</span>
+                    <svg class="ic ic-sm flecha"><use href="#i-abajo"/></svg>
+                </button>
+                <div class="cuerpo-seccion" id="cuerpo-mediciones">
+                    <div class="bloque inversor-med" id="totalizador">
+                        <div class="cab-bloque">
+                            <div class="titulo nombre-inversor">Totalizador AC</div>
+                        </div>
+                        <p class="descripcion">Medida general del tablero principal, antes de los breakers de cada circuito.</p>
+
+                        <select class="control tipo-ac" aria-label="Tipo de conexión">
+                            <option value="bifasico" selected>Bifásico (L1, L2)</option>
+                            <option value="trifasico">Trifásico (L1, L2, L3)</option>
+                        </select>
+
+                        <label class="casilla">
+                            <input type="checkbox" class="con-neutro" checked>
+                            <span>Medir también de línea a neutro</span>
+                        </label>
+
+                        <div class="rejilla-medidas campos-ac"></div>
+
+            <div class="galerias">
+                <div class="galeria" data-momento="antes">
+                    <div class="cab-galeria">
+                        <span class="etiqueta et-antes">Antes</span>
+                        <span class="cuenta"></span>
+                        <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado inicial">
+                            <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                        </button>
+                        <input type="file" multiple accept="image/*" hidden>
+                    </div>
+                    <div class="fotos image-preview-container"></div>
+                </div>
+
+                <div class="galeria" data-momento="despues">
+                    <div class="cab-galeria">
+                        <span class="etiqueta et-despues">Después</span>
+                        <span class="cuenta"></span>
+                        <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado final">
+                            <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                        </button>
+                        <input type="file" multiple accept="image/*" hidden>
+                    </div>
+                    <div class="fotos image-preview-container"></div>
+                </div>
+            </div>
+                    </div>
+
+                    <div id="contenedor-inversores"></div>
+                    <button type="button" class="btn btn-linea btn-ancho" id="btn-add-inversor" style="margin-top:.5rem;">
+                        <svg class="ic ic-sm"><use href="#i-mas"/></svg>
+                        Añadir inversor
+                    </button>
+                </div>
+            </section>
+
             <!-- Resultados -->
             <section class="tarjeta seccion">
                 <button type="button" class="cab-seccion" aria-expanded="false" aria-controls="cuerpo-resultados">
@@ -1192,20 +1392,33 @@
         <textarea class="control activity-notes" data-voz="Notas de la actividad" rows="3"
                   placeholder="Notas, observaciones o detalles adicionales…"></textarea>
 
-        <div class="acciones" data-acciones>
-            <button type="button" class="bi image-upload" aria-label="Añadir fotos">
-                <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
-            </button>
-            <input type="file" multiple accept="image/*" hidden>
-            <span class="por-fila">
-                <svg class="ic" style="width:13px;height:13px;"><use href="#i-rejilla"/></svg>
-                <select class="activity-images-per-row" aria-label="Fotos por fila">
-                    <option>1</option><option selected>2</option><option>3</option><option>4</option>
-                </select>
-            </span>
-        </div>
+        <div class="acciones" data-acciones></div>
 
-        <div class="fotos image-preview-container"></div>
+        <div class="galerias">
+            <div class="galeria" data-momento="antes">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-antes">Antes</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado inicial">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+
+            <div class="galeria" data-momento="despues">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-despues">Después</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado final">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -1224,20 +1437,33 @@
         <textarea class="control activity-notes" data-voz="Descripción de la actividad" rows="3"
                   placeholder="Describe la actividad realizada…"></textarea>
 
-        <div class="acciones" data-acciones>
-            <button type="button" class="bi image-upload" aria-label="Añadir fotos">
-                <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
-            </button>
-            <input type="file" multiple accept="image/*" hidden>
-            <span class="por-fila">
-                <svg class="ic" style="width:13px;height:13px;"><use href="#i-rejilla"/></svg>
-                <select class="activity-images-per-row" aria-label="Fotos por fila">
-                    <option>1</option><option selected>2</option><option>3</option><option>4</option>
-                </select>
-            </span>
-        </div>
+        <div class="acciones" data-acciones></div>
 
-        <div class="fotos image-preview-container"></div>
+        <div class="galerias">
+            <div class="galeria" data-momento="antes">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-antes">Antes</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado inicial">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+
+            <div class="galeria" data-momento="despues">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-despues">Después</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado final">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -1253,20 +1479,33 @@
         <textarea class="control resultado-text" data-voz="Resultado" rows="3"
                   placeholder="Describe el resultado obtenido…"></textarea>
 
-        <div class="acciones" data-acciones>
-            <button type="button" class="bi image-upload" aria-label="Añadir fotos">
-                <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
-            </button>
-            <input type="file" multiple accept="image/*" hidden>
-            <span class="por-fila">
-                <svg class="ic" style="width:13px;height:13px;"><use href="#i-rejilla"/></svg>
-                <select class="result-images-per-row" aria-label="Fotos por fila">
-                    <option>1</option><option selected>2</option><option>3</option><option>4</option>
-                </select>
-            </span>
-        </div>
+        <div class="acciones" data-acciones></div>
 
-        <div class="fotos image-preview-container"></div>
+        <div class="galerias">
+            <div class="galeria" data-momento="antes">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-antes">Antes</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado inicial">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+
+            <div class="galeria" data-momento="despues">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-despues">Después</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado final">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -1282,20 +1521,33 @@
         <textarea class="control anomalia-text" data-voz="Anomalía" rows="3"
                   placeholder="Describe la anomalía encontrada…"></textarea>
 
-        <div class="acciones" data-acciones>
-            <button type="button" class="bi image-upload" aria-label="Añadir fotos">
-                <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
-            </button>
-            <input type="file" multiple accept="image/*" hidden>
-            <span class="por-fila">
-                <svg class="ic" style="width:13px;height:13px;"><use href="#i-rejilla"/></svg>
-                <select class="anomaly-images-per-row" aria-label="Fotos por fila">
-                    <option>1</option><option selected>2</option><option>3</option><option>4</option>
-                </select>
-            </span>
-        </div>
+        <div class="acciones" data-acciones></div>
 
-        <div class="fotos image-preview-container"></div>
+        <div class="galerias">
+            <div class="galeria" data-momento="antes">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-antes">Antes</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado inicial">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+
+            <div class="galeria" data-momento="despues">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-despues">Después</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado final">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -1311,20 +1563,33 @@
         <textarea class="control recomendacion-text" data-voz="Recomendación" rows="3"
                   placeholder="Escribe la recomendación…"></textarea>
 
-        <div class="acciones" data-acciones>
-            <button type="button" class="bi image-upload" aria-label="Añadir fotos">
-                <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
-            </button>
-            <input type="file" multiple accept="image/*" hidden>
-            <span class="por-fila">
-                <svg class="ic" style="width:13px;height:13px;"><use href="#i-rejilla"/></svg>
-                <select class="recommendation-images-per-row" aria-label="Fotos por fila">
-                    <option>1</option><option selected>2</option><option>3</option><option>4</option>
-                </select>
-            </span>
-        </div>
+        <div class="acciones" data-acciones></div>
 
-        <div class="fotos image-preview-container"></div>
+        <div class="galerias">
+            <div class="galeria" data-momento="antes">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-antes">Antes</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado inicial">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+
+            <div class="galeria" data-momento="despues">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-despues">Después</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado final">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -1341,24 +1606,87 @@
     </div>
 </template>
 
-<template id="template-inversor">
-    <div class="bloque inversor-group" style="background:var(--fondo);">
+<template id="template-inversor-med">
+    <div class="bloque inversor-med">
         <div class="cab-bloque">
-            <div class="titulo inversor-title"></div>
-        </div>
-        <div class="acciones" style="margin-top:0;">
-            <button type="button" class="bi image-upload" aria-label="Añadir fotos del inversor">
-                <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+            <div class="titulo nombre-inversor"></div>
+            <button type="button" class="bi bi-peligro quitar-inversor" aria-label="Quitar inversor">
+                <svg class="ic ic-sm"><use href="#i-x"/></svg>
             </button>
-            <input type="file" multiple accept="image/*" class="inversor-image-input" hidden>
-            <span class="por-fila">
-                <svg class="ic" style="width:13px;height:13px;"><use href="#i-rejilla"/></svg>
-                <select class="inversor-images-per-row" aria-label="Fotos por fila">
-                    <option>1</option><option selected>2</option><option>3</option><option>4</option>
-                </select>
-            </span>
         </div>
-        <div class="fotos image-preview-container inversor-image-preview-container"></div>
+
+        <div class="sub-bloque">Strings (DC)</div>
+        <div class="lista-strings"></div>
+        <button type="button" class="btn btn-linea btn-ancho add-string">
+            <svg class="ic ic-sm"><use href="#i-mas"/></svg>
+            Añadir string
+        </button>
+
+        <div class="sub-bloque">Salida AC</div>
+        <select class="control tipo-ac" aria-label="Tipo de conexión AC">
+            <option value="bifasico" selected>Bifásico (L1, L2)</option>
+            <option value="trifasico">Trifásico (L1, L2, L3)</option>
+        </select>
+
+        <label class="casilla">
+            <input type="checkbox" class="con-neutro" checked>
+            <span>Medir también de línea a neutro</span>
+        </label>
+
+        <div class="rejilla-medidas campos-ac"></div>
+
+        <div class="sub-bloque">Fotografías del inversor</div>
+        <div class="galerias">
+            <div class="galeria" data-momento="antes">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-antes">Antes</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado inicial">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+
+            <div class="galeria" data-momento="despues">
+                <div class="cab-galeria">
+                    <span class="etiqueta et-despues">Después</span>
+                    <span class="cuenta"></span>
+                    <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado final">
+                        <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
+                    </button>
+                    <input type="file" multiple accept="image/*" hidden>
+                </div>
+                <div class="fotos image-preview-container"></div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="template-string">
+    <div class="string-fila">
+        <div class="cab">
+            <span class="rot-string">String</span>
+            <input type="number" class="num-string" min="1" max="99" inputmode="numeric"
+                   aria-label="Número de string">
+            <button type="button" class="bi bi-peligro quitar-string" aria-label="Quitar string">
+                <svg class="ic ic-sm"><use href="#i-x"/></svg>
+            </button>
+        </div>
+        <div class="rejilla-medidas">
+            <span class="cabecera izq"></span>
+            <span class="cabecera">Antes</span>
+            <span class="cabecera">Después</span>
+
+            <span class="rotulo">Tensión (V)</span>
+            <input class="medida antes v-antes" type="number" inputmode="decimal" step="any" placeholder="—">
+            <input class="medida despues v-despues" type="number" inputmode="decimal" step="any" placeholder="—">
+
+            <span class="rotulo">Corriente (A)</span>
+            <input class="medida antes i-antes" type="number" inputmode="decimal" step="any" placeholder="—">
+            <input class="medida despues i-despues" type="number" inputmode="decimal" step="any" placeholder="—">
+        </div>
     </div>
 </template>
 
@@ -1376,66 +1704,86 @@
     <script>
         // Datos predefinidos de actividades
         const maintenanceActivities = {
+            // `porDefecto` marca las actividades del protocolo de campo: se
+            // cargan solas al crear un informe. El tecnico borra las que no
+            // haya hecho, en vez de tener que acordarse de anadirlas.
             preventive: [
                 {
                     id: "prev-1",
-                    title: "Lavado y limpieza de módulos",
-                    description: "Se utiliza un cepillo eléctrico y un champú especial para limpiar a fondo los paneles. Esto asegura que no haya suciedad o residuos que puedan bloquear la luz solar, lo que optimiza la generación de energía."
+                    porDefecto: true,
+                    title: "Inspección visual de módulos",
+                    description: "Se recorre la totalidad del arreglo fotovoltaico verificando el estado de los módulos: fisuras, celdas quemadas, delaminación, puntos calientes y suciedad acumulada."
                 },
                 {
                     id: "prev-2",
-                    title: "Limpieza de zona de inversores y tableros",
-                    description: "Se realiza una limpieza general de los inversores, tableros de protecciones DC y el tablero principal. Esto evita la acumulación de polvo y suciedad que podría causar sobrecalentamiento o fallas."
+                    porDefecto: true,
+                    title: "Lavado y limpieza de módulos",
+                    description: "Se lavan los módulos con cepillo eléctrico y champú especial para retirar la suciedad que bloquea la radiación solar y limita la generación."
                 },
                 {
                     id: "prev-3",
-                    title: "Inspección visual",
-                    description: "Se lleva a cabo una revisión detallada de toda la granja solar para verificar el estado de los módulos, inversores, cableado y tableros. Esto ayuda a detectar cualquier problema potencial antes de que se convierta en una falla mayor."
+                    porDefecto: true,
+                    title: "Mantenimiento de strings en DC",
+                    description: "Se interviene el tablero de protecciones DC: limpieza, verificación de fusibles, portafusibles y bornes, y revisión de sulfatación o puntos calientes en las conexiones de cada string."
                 },
                 {
                     id: "prev-4",
-                    title: "Verificación de conexiones eléctricas",
-                    description: "Se inspeccionan todas las conexiones eléctricas, tanto en los strings como en los inversores y tableros. Se busca cualquier señal de sulfatación, puntos calientes, o conexiones sueltas para asegurar un contacto seguro y eficiente."
+                    porDefecto: true,
+                    title: "Medición de tensión en AC",
+                    description: "Se mide la tensión en el totalizador y en los breakers de cada circuito: entre líneas, de línea a neutro y de neutro a tierra, para verificar el equilibrio entre fases y el estado de la puesta a tierra."
                 },
                 {
                     id: "prev-5",
-                    title: "Toma de medidas de strings",
-                    description: "Se miden la tensión y la corriente de los strings para verificar que estén operando dentro de los parámetros esperados. Es recomendable hacerlo antes y después de la limpieza para confirmar la mejora en el rendimiento."
+                    porDefecto: true,
+                    title: "Verificación del smart meter",
+                    description: "Se comprueba que el medidor inteligente esté energizado, comunicando y registrando correctamente los datos de generación."
                 },
                 {
                     id: "prev-6",
-                    title: "Ajustes mecánicos y retorqueo",
-                    description: "Se ajustan los anclajes de los paneles y se realiza un retorqueo en las borneras para asegurar que todas las fijaciones estén seguras. Esto es crucial para la estabilidad de la estructura."
+                    porDefecto: true,
+                    title: "Canalización y cableado DC y AC",
+                    description: "Se inspeccionan canalizaciones, bandejas y conductores en los tramos DC y AC, verificando el estado del aislamiento, la sujeción y la ausencia de daños por rozamiento o roedores."
                 },
                 {
                     id: "prev-7",
-                    title: "Pintura de canalizaciones",
-                    description: "Se aplica pintura en las canalizaciones para una mejor identificación de los circuitos y para mantener la estética del sistema."
+                    porDefecto: true,
+                    title: "Inversores generando",
+                    description: "Se verifica que todos los inversores estén en operación y sin alarmas activas, y se contrasta la generación registrada con la esperada para las condiciones del día."
                 },
                 {
                     id: "prev-8",
-                    title: "Pruebas de funcionamiento del sistema",
-                    description: "Se realizan pruebas para verificar el correcto desempeño de los inversores y la generación de energía general del sistema."
+                    porDefecto: true,
+                    title: "Marquillas y franjas de señalización",
+                    description: "Se revisa el estado de las marquillas de identificación de circuitos y de las franjas naranjas de señalización, reponiendo o repintando las deterioradas."
                 },
                 {
                     id: "prev-9",
-                    title: "Revisión del sistema de puesta a tierra",
-                    description: "Se verifica que las conexiones a tierra estén en buen estado y miden la resistencia para asegurar que el sistema esté protegido contra descargas eléctricas y sobretensiones."
+                    porDefecto: true,
+                    title: "Retorqueo de la estructura",
+                    description: "Se aplica el torque especificado a la tornillería de la estructura de soporte y a los anclajes de los módulos, verificando que no queden elementos flojos."
                 },
                 {
                     id: "prev-10",
-                    title: "Inspección de sistemas de monitoreo",
-                    description: "Se revisa que el software y los equipos de monitoreo estén funcionando correctamente y registrando los datos de producción de manera precisa."
+                    porDefecto: true,
+                    title: "Limpieza de tableros e inversores",
+                    description: "Se realiza la limpieza general de los inversores, del tablero de protecciones DC y del tablero principal AC, retirando el polvo y la suciedad que pueden causar sobrecalentamiento."
                 },
+
+                // Disponibles en el desplegable, no se cargan solas.
                 {
                     id: "prev-11",
-                    title: "Limpieza de la vegetación",
-                    description: "Se retira cualquier vegetación (hierba, maleza) que pueda proyectar sombras sobre los paneles y reducir su eficiencia. También se limpia para prevenir incendios y garantizar el acceso seguro al área."
+                    title: "Revisión del sistema de puesta a tierra",
+                    description: "Se verifica el estado de las conexiones a tierra y se mide la resistencia para asegurar la protección contra descargas y sobretensiones."
                 },
                 {
                     id: "prev-12",
-                    title: "Revisión de cableado y conductores",
-                    description: "Se inspeccionan los cables y conductores para detectar daños en el aislamiento, asegurando que no haya roedores o elementos externos que los hayan afectado."
+                    title: "Limpieza de la vegetación",
+                    description: "Se retira la vegetación que pueda proyectar sombra sobre los módulos o dificultar el acceso seguro al área."
+                },
+                {
+                    id: "prev-13",
+                    title: "Pruebas de funcionamiento del sistema",
+                    description: "Se realizan pruebas para verificar el desempeño de los inversores y la generación general del sistema."
                 }
             ],
             corrective: [
@@ -1447,17 +1795,17 @@
                 {
                     id: "corr-2",
                     title: "Reemplazo de marquillas y señalización",
-                    description: "Se sustituyen las marquillas o señalizaciones que se han deteriorado o perdido. Esto es importante para la seguridad del personal y para facilitar futuras inspecciones."
+                    description: "Se sustituyen las marquillas o señalizaciones deterioradas o perdidas, importantes para la seguridad del personal y para futuras inspecciones."
                 },
                 {
                     id: "corr-3",
                     title: "Refuerzo de pintura en líneas de peligro",
-                    description: "Se refuerza la pintura de demarcación que indica zonas de peligro alrededor de los inversores para garantizar la seguridad del personal de operación y mantenimiento."
+                    description: "Se refuerza la pintura de demarcación que indica zonas de peligro alrededor de los inversores, para garantizar la seguridad del personal."
                 },
                 {
                     id: "corr-4",
                     title: "Refuerzo de pintura anticorrosiva",
-                    description: "Se aplica pintura anticorrosiva en las partes metálicas que muestran signos de corrosión para prevenir daños mayores a la estructura."
+                    description: "Se aplica pintura anticorrosiva en las partes metálicas con signos de corrosión, para prevenir daños mayores a la estructura."
                 }
             ]
         };
@@ -2186,7 +2534,8 @@
                 resultados: cuenta('#contenedor-resultados .dynamic-item'),
                 anomalias: cuenta('#contenedor-anomalias .dynamic-item'),
                 recomendaciones: cuenta('#contenedor-recomendaciones .dynamic-item'),
-                fotos: cuenta('#pagina-informe .image-preview-item')
+                fotos: cuenta('#pagina-informe .image-preview-item'),
+                mediciones: cuenta('#contenedor-inversores .string-fila')
             };
 
             const zona = document.getElementById('resumen');
@@ -2216,13 +2565,19 @@
             globo('globo-anomalias', n.anomalias);
             globo('globo-recomendaciones', n.recomendaciones);
 
+            const inversores = cuenta('#contenedor-inversores .inversor-med');
+            globo('globo-mediciones', inversores);
+
             const sin = document.getElementById('sin-actividades');
             if (sin) sin.classList.toggle('oculto', n.actividades > 0);
 
-            // El selector de "fotos por fila" solo estorba si no hay fotos.
-            document.querySelectorAll('#pagina-informe .image-preview-container').forEach(cont => {
-                const control = cont.parentElement && cont.parentElement.querySelector('.por-fila');
-                if (control) control.classList.toggle('visible', cont.children.length > 0);
+            // Cada galería dice cuántas fotos lleva, para que el técnico vea
+            // de un vistazo si le falta el "después".
+            document.querySelectorAll('#pagina-informe .galeria').forEach(g => {
+                const total = g.querySelectorAll('.image-preview-item').length;
+                const marca = g.querySelector('.cuenta');
+                if (marca) marca.textContent = total === 0 ? 'sin fotos'
+                    : total + (total === 1 ? ' foto' : ' fotos');
             });
         }
 
@@ -2342,6 +2697,10 @@
             };
         }).filter(f => f.data);
 
+        // La galería "antes" o la "después" de un bloque cualquiera.
+        const galeriaDe = (bloque, momento) => bloque && bloque.querySelector(
+            '.galeria[data-momento="' + momento + '"] .image-preview-container');
+
         const valorDe = (raiz, sel, porDefecto) => {
             const el = raiz && raiz.querySelector(sel);
             return el ? el.value : (porDefecto === undefined ? '' : porDefecto);
@@ -2357,25 +2716,48 @@
                 id: el.getAttribute('data-activity-id'),
                 titulo: valorDe(el, '.custom-activity-title'),
                 notas: valorDe(el, '.activity-notes'),
-                porFila: valorDe(el, '.activity-images-per-row', '2'),
-                fotos: recogerFotos(el.querySelector('.image-preview-container')),
-                inversores: Array.from(el.querySelectorAll('.inversor-group')).map(g => ({
-                    porFila: valorDe(g, '.inversor-images-per-row', '2'),
-                    fotos: recogerFotos(g.querySelector('.image-preview-container'))
-                }))
+                fotosAntes: recogerFotos(galeriaDe(el, 'antes')),
+                fotosDespues: recogerFotos(galeriaDe(el, 'despues'))
             }));
 
-            const bloques = (contenedorId, claseTexto, clasePorFila) => Array.from(
+            const bloques = (contenedorId, claseTexto) => Array.from(
                 document.querySelectorAll('#' + contenedorId + ' .dynamic-item')
             ).map(el => ({
                 texto: valorDe(el, claseTexto),
-                porFila: valorDe(el, clasePorFila, '2'),
-                fotos: recogerFotos(el.querySelector('.image-preview-container'))
+                fotosAntes: recogerFotos(galeriaDe(el, 'antes')),
+                fotosDespues: recogerFotos(galeriaDe(el, 'despues'))
             }));
+
+            const inversores = Array.from(
+                document.querySelectorAll('#contenedor-inversores .inversor-med')
+            ).map(inv => ({
+                nombre: inv.querySelector('.nombre-inversor').textContent,
+                tipoAC: valorDe(inv, '.tipo-ac', 'bifasico'),
+                conNeutro: !!inv.querySelector('.con-neutro').checked,
+                ac: recogerAC(inv),
+                strings: Array.from(inv.querySelectorAll('.string-fila')).map(st => ({
+                    numero: valorDe(st, '.num-string', '1'),
+                    vAntes: valorDe(st, '.v-antes'),
+                    vDespues: valorDe(st, '.v-despues'),
+                    iAntes: valorDe(st, '.i-antes'),
+                    iDespues: valorDe(st, '.i-despues')
+                })),
+                fotosAntes: recogerFotos(galeriaDe(inv, 'antes')),
+                fotosDespues: recogerFotos(galeriaDe(inv, 'despues'))
+            }));
+
+            const tot = document.getElementById('totalizador');
 
             return {
                 id: informeActivo,
-                v: 2,
+                v: 4,
+                totalizador: {
+                    tipoAC: valorDe(tot, '.tipo-ac', 'bifasico'),
+                    conNeutro: !!tot.querySelector('.con-neutro').checked,
+                    ac: recogerAC(tot),
+                    fotosAntes: recogerFotos(galeriaDe(tot, 'antes')),
+                    fotosDespues: recogerFotos(galeriaDe(tot, 'despues'))
+                },
                 actualizado: Date.now(),
                 proyectoNombre: val('proyectoNombre'),
                 ubicacion: val('ubicacion'),
@@ -2383,9 +2765,10 @@
                 tecnicoNombre: val('tecnicoNombre'),
                 conclusion: val('conclusion'),
                 actividades: actividades,
-                resultados: bloques('contenedor-resultados', '.resultado-text', '.result-images-per-row'),
-                anomalias: bloques('contenedor-anomalias', '.anomalia-text', '.anomaly-images-per-row'),
-                recomendaciones: bloques('contenedor-recomendaciones', '.recomendacion-text', '.recommendation-images-per-row')
+                inversores: inversores,
+                resultados: bloques('contenedor-resultados', '.resultado-text'),
+                anomalias: bloques('contenedor-anomalias', '.anomalia-text'),
+                recomendaciones: bloques('contenedor-recomendaciones', '.recomendacion-text')
             };
         }
 
@@ -2481,41 +2864,35 @@
                 if (!el) return;
 
                 ponerValor(el, '.activity-notes', a.notas);
-                ponerValor(el, '.activity-images-per-row', a.porFila);
-                pintarFotos(el.querySelector('.image-preview-container'), a.fotos);
-
-                // Inversores de "Toma de medidas de strings"
-                const seccion = el.querySelector('.inversor-section');
-                if (seccion && (a.inversores || []).length) {
-                    const cuenta = seccion.querySelector('.inversor-count');
-                    cuenta.value = a.inversores.length;
-                    cuenta.dispatchEvent(new Event('change'));
-                    const grupos = seccion.querySelectorAll('.inversor-group');
-                    a.inversores.forEach((inv, i) => {
-                        if (!grupos[i]) return;
-                        ponerValor(grupos[i], '.inversor-images-per-row', inv.porFila);
-                        pintarFotos(grupos[i].querySelector('.image-preview-container'), inv.fotos);
-                    });
-                }
+                // `a.fotos` es del formato viejo (v2), cuando no había antes
+                // ni después: esas fotos entran como "antes" para no perderlas.
+                pintarFotos(galeriaDe(el, 'antes'), a.fotosAntes || a.fotos);
+                pintarFotos(galeriaDe(el, 'despues'), a.fotosDespues);
             });
 
-            const restaurarBloques = (lista, botonId, contenedorId, claseTexto, clasePorFila) => {
+            const tot = document.getElementById('totalizador');
+            conectarAC(tot, informe.totalizador || {});
+            if (informe.totalizador) {
+                pintarFotos(galeriaDe(tot, 'antes'), informe.totalizador.fotosAntes);
+                pintarFotos(galeriaDe(tot, 'despues'), informe.totalizador.fotosDespues);
+            }
+
+            (informe.inversores || []).forEach(inv => anadirInversor(inv));
+
+            const restaurarBloques = (lista, botonId, contenedorId, claseTexto) => {
                 (lista || []).forEach(b => {
                     document.getElementById(botonId).click();
                     const items = document.querySelectorAll('#' + contenedorId + ' .dynamic-item');
                     const ultimo = items[items.length - 1];
                     if (!ultimo) return;
                     ponerValor(ultimo, claseTexto, b.texto);
-                    ponerValor(ultimo, clasePorFila, b.porFila);
-                    pintarFotos(ultimo.querySelector('.image-preview-container'), b.fotos);
+                    pintarFotos(galeriaDe(ultimo, 'antes'), b.fotosAntes || b.fotos);
+                    pintarFotos(galeriaDe(ultimo, 'despues'), b.fotosDespues);
                 });
             };
-            restaurarBloques(informe.resultados, 'btn-add-resultado', 'contenedor-resultados',
-                '.resultado-text', '.result-images-per-row');
-            restaurarBloques(informe.anomalias, 'btn-add-anomalia', 'contenedor-anomalias',
-                '.anomalia-text', '.anomaly-images-per-row');
-            restaurarBloques(informe.recomendaciones, 'btn-add-recomendacion', 'contenedor-recomendaciones',
-                '.recomendacion-text', '.recommendation-images-per-row');
+            restaurarBloques(informe.resultados, 'btn-add-resultado', 'contenedor-resultados', '.resultado-text');
+            restaurarBloques(informe.anomalias, 'btn-add-anomalia', 'contenedor-anomalias', '.anomalia-text');
+            restaurarBloques(informe.recomendaciones, 'btn-add-recomendacion', 'contenedor-recomendaciones', '.recomendacion-text');
 
             actualizarResumen();
         }
@@ -2525,6 +2902,7 @@
                 .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 
             document.getElementById('contenedor-actividades').innerHTML = '';
+            document.getElementById('contenedor-inversores').innerHTML = '';
             document.getElementById('contenedor-resultados').innerHTML = '';
             document.getElementById('contenedor-anomalias').innerHTML = '';
             document.getElementById('contenedor-recomendaciones').innerHTML = '';
@@ -2618,6 +2996,16 @@
                 Math.floor(Math.random() * 1e4).toString(36);
             limpiarFormulario();
             document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+
+            // El protocolo de campo entra ya puesto: el técnico borra lo que
+            // no haya hecho, en vez de tener que acordarse de añadirlo.
+            maintenanceActivities.preventive
+                .filter(a => a.porDefecto)
+                .forEach(a => addSelectedActivity('preventive', a.id, true));
+
+            conectarAC(document.getElementById('totalizador'), {});
+            anadirInversor();
+
             mostrarPagina('pagina-informe');
             document.getElementById('proyectoNombre').focus();
         }
@@ -2721,16 +3109,15 @@
             elemento.querySelector('.selected-activity-title').textContent = datos.title;
             elemento.querySelector('.activity-description').textContent = datos.description;
 
-            // "Toma de medidas de strings" lleva sus propias fotos por
-            // inversor, así que la galería general del bloque sobra. Se
-            // esconden solo la cámara y el selector de fotos por fila: el
-            // dictado y el botón de mejorar siguen haciendo falta para las
-            // notas de la actividad.
+            // "Toma de medidas de strings" ya no lleva nada especial: las
+            // lecturas se capturan en la sección "Mediciones eléctricas",
+            // con su inversor y su string identificados.
             if (activityId === 'prev-5') {
-                elemento.querySelector('.image-upload').classList.add('oculto');
-                elemento.querySelector('.por-fila').classList.add('oculto');
-                elemento.querySelector('.image-preview-container').classList.add('oculto');
-                montarInversores(elemento);
+                const aviso = document.createElement('p');
+                aviso.className = 'descripcion';
+                aviso.style.color = 'var(--azul)';
+                aviso.textContent = 'Las lecturas se registran en la sección «Mediciones eléctricas».';
+                elemento.querySelector('.activity-description').insertAdjacentElement('afterend', aviso);
             }
 
             document.getElementById('contenedor-actividades').appendChild(elemento);
@@ -2748,62 +3135,208 @@
             if (!silencioso) showMessage('Añadida: ' + datos.title, 'ok');
         }
 
-        // Bloque de fotos por inversor, para la toma de medidas de strings.
-        function montarInversores(elemento) {
-            const seccion = document.createElement('div');
-            seccion.className = 'inversor-section';
-            seccion.style.marginTop = '.5rem';
-            seccion.innerHTML =
-                '<div class="campo"><label>Cantidad de inversores</label>' +
-                '<select class="control inversor-count">' +
-                Array.from({ length: 20 }, (_, i) =>
-                    '<option value="' + (i + 1) + '">' + (i + 1) + '</option>').join('') +
-                '</select></div><div class="inversores-container"></div>';
+        // ============================================================
+        // MEDICIONES ELECTRICAS
+        //
+        // Antes esto eran fotos de la pantalla del multímetro metidas bajo
+        // un título "INVERSOR 1", sin decir a qué string pertenecía cada
+        // lectura ni si era antes o después del lavado. En el informe no
+        // aparecía ni un solo número.
+        //
+        // Ahora son datos: cada inversor tiene sus strings identificados y
+        // su salida AC, y todo se mide antes y después del mantenimiento,
+        // que es lo que demuestra la mejora de generación.
+        // ============================================================
 
-            elemento.appendChild(seccion);
+        // Filas de la tabla AC. La mayoría de los proyectos son bifásicos,
+        // pero también hay trifásicos; y en los dos casos hace falta medir
+        // de línea a neutro y de neutro a tierra, como pide el protocolo.
+        const FILAS_AC = {
+            bifasico: {
+                lineas: [['v12', 'Tensi\u00f3n L1-L2 (V)']],
+                neutro: [['v1n', 'Tensi\u00f3n L1-N (V)'], ['v2n', 'Tensi\u00f3n L2-N (V)']],
+                tierra: [['vnt', 'Tensi\u00f3n N-T (V)']],
+                corrientes: [['i1', 'Corriente L1 (A)'], ['i2', 'Corriente L2 (A)']]
+            },
+            trifasico: {
+                lineas: [
+                    ['v12', 'Tensi\u00f3n L1-L2 (V)'],
+                    ['v23', 'Tensi\u00f3n L2-L3 (V)'],
+                    ['v13', 'Tensi\u00f3n L1-L3 (V)']
+                ],
+                neutro: [
+                    ['v1n', 'Tensi\u00f3n L1-N (V)'],
+                    ['v2n', 'Tensi\u00f3n L2-N (V)'],
+                    ['v3n', 'Tensi\u00f3n L3-N (V)']
+                ],
+                tierra: [['vnt', 'Tensi\u00f3n N-T (V)']],
+                corrientes: [
+                    ['i1', 'Corriente L1 (A)'],
+                    ['i2', 'Corriente L2 (A)'],
+                    ['i3', 'Corriente L3 (A)']
+                ]
+            }
+        };
 
-            const cuenta = seccion.querySelector('.inversor-count');
-            const contenedor = seccion.querySelector('.inversores-container');
-            const plantilla = document.getElementById('template-inversor');
-
-            const redibujar = () => {
-                const n = parseInt(cuenta.value, 10) || 1;
-                // Se conservan los grupos que ya existen para no perder sus
-                // fotos al subir o bajar la cantidad.
-                const actuales = contenedor.querySelectorAll('.inversor-group').length;
-
-                for (let i = actuales; i < n; i++) {
-                    const clon = plantilla.content.cloneNode(true);
-                    const grupo = clon.querySelector('.inversor-group');
-                    grupo.querySelector('.inversor-title').textContent = 'Inversor ' + (i + 1);
-                    contenedor.appendChild(grupo);
-                    conectarSubidaFotos(grupo);
-                }
-                for (let i = actuales; i > n; i--) {
-                    const ultimo = contenedor.querySelector('.inversor-group:last-child');
-                    if (ultimo) ultimo.remove();
-                }
-                actualizarResumen();
-            };
-
-            cuenta.addEventListener('change', redibujar);
-            redibujar();
+        // Arma la lista de filas según el tipo y si se miden los neutros.
+        function filasAC(tipo, conNeutro) {
+            const g = FILAS_AC[tipo] || FILAS_AC.bifasico;
+            return g.lineas
+                .concat(conNeutro ? g.neutro : [])
+                .concat(g.tierra)
+                .concat(g.corrientes);
         }
 
-        // Un solo sitio donde se conecta el botón de la cámara con su input.
-        function conectarSubidaFotos(raiz) {
-            const boton = raiz.querySelector('.image-upload');
-            const input = raiz.querySelector('input[type="file"]');
-            const galeria = raiz.querySelector('.image-preview-container');
-            if (!boton || !input || !galeria) return;
+        function pintarCamposAC(inversor, tipo, conNeutro, valores) {
+            const zona = inversor.querySelector('.campos-ac');
+            const filas = filasAC(tipo, conNeutro);
+            const v = valores || {};
 
-            boton.addEventListener('click', () => input.click());
-            input.addEventListener('change', async (e) => {
-                boton.classList.add('trabajando');
-                await agregarImagenes(e.target.files, galeria);
-                boton.classList.remove('trabajando');
-                e.target.value = ''; // permite volver a elegir la misma foto
+            let html = '<span class="cabecera izq"></span>' +
+                       '<span class="cabecera">Antes</span>' +
+                       '<span class="cabecera">Despu\u00e9s</span>';
+
+            filas.forEach(([clave, rotulo]) => {
+                const antes = (v[clave] && v[clave].antes) || '';
+                const despues = (v[clave] && v[clave].despues) || '';
+                html +=
+                    '<span class="rotulo">' + rotulo + '</span>' +
+                    '<input class="medida antes" data-ac="' + clave + '" data-momento="antes" ' +
+                    'type="number" inputmode="decimal" step="any" placeholder="\u2014" value="' + antes + '">' +
+                    '<input class="medida despues" data-ac="' + clave + '" data-momento="despues" ' +
+                    'type="number" inputmode="decimal" step="any" placeholder="\u2014" value="' + despues + '">';
+            });
+
+            zona.innerHTML = html;
+        }
+
+        // Deja listo un bloque con tabla AC: el select de tipo y la casilla
+        // de neutro repintan las filas conservando lo ya escrito.
+        function conectarAC(bloque, datos) {
+            const d = datos || {};
+            const selectTipo = bloque.querySelector('.tipo-ac');
+            const casilla = bloque.querySelector('.con-neutro');
+
+            selectTipo.value = d.tipoAC || 'bifasico';
+            casilla.checked = d.conNeutro !== false;
+            pintarCamposAC(bloque, selectTipo.value, casilla.checked, d.ac);
+
+            const repintar = () => {
+                pintarCamposAC(bloque, selectTipo.value, casilla.checked, recogerAC(bloque));
                 guardarInforme();
+            };
+            selectTipo.addEventListener('change', repintar);
+            casilla.addEventListener('change', repintar);
+        }
+
+        // Renumera para que los nombres sigan el orden visible tras un borrado.
+        function renumerarInversores() {
+            document.querySelectorAll('#contenedor-inversores .inversor-med').forEach((inv, i) => {
+                inv.querySelector('.nombre-inversor').textContent = 'Inversor ' + (i + 1);
+            });
+        }
+
+        // El siguiente numero libre dentro de un inversor, como sugerencia:
+        // el tecnico puede cambiarlo, porque no siempre se miden todos los
+        // strings ni en orden.
+        function siguienteNumeroString(inversor) {
+            const usados = Array.from(inversor.querySelectorAll('.num-string'))
+                .map(i => parseInt(i.value, 10) || 0);
+            let n = 1;
+            while (usados.indexOf(n) !== -1) n++;
+            return n;
+        }
+
+        function anadirString(inversor, datos) {
+            const clon = document.getElementById('template-string').content.cloneNode(true);
+            const fila = clon.querySelector('.string-fila');
+
+            const poner = (sel, val) => { if (val) fila.querySelector(sel).value = val; };
+            if (datos) {
+                poner('.v-antes', datos.vAntes);
+                poner('.v-despues', datos.vDespues);
+                poner('.i-antes', datos.iAntes);
+                poner('.i-despues', datos.iDespues);
+            }
+            fila.querySelector('.num-string').value =
+                (datos && datos.numero) || siguienteNumeroString(inversor);
+
+            fila.querySelector('.quitar-string').addEventListener('click', () => {
+                fila.remove();
+                actualizarResumen();
+                guardarInforme();
+            });
+
+            inversor.querySelector('.lista-strings').appendChild(fila);
+            return fila;
+        }
+
+        function anadirInversor(datos) {
+            const clon = document.getElementById('template-inversor-med').content.cloneNode(true);
+            const inversor = clon.querySelector('.inversor-med');
+            const d = datos || {};
+
+            conectarAC(inversor, d);
+
+            inversor.querySelector('.add-string').addEventListener('click', () => {
+                anadirString(inversor);
+                actualizarResumen();
+                guardarInforme();
+            });
+
+            inversor.querySelector('.quitar-inversor').addEventListener('click', async () => {
+                const ok = await confirmar('Quitar inversor',
+                    'Se borran sus mediciones y sus fotos.', 'Quitar');
+                if (!ok) return;
+                inversor.remove();
+                renumerarInversores();
+                actualizarResumen();
+                guardarInforme();
+            });
+
+            document.getElementById('contenedor-inversores').appendChild(inversor);
+            conectarSubidaFotos(inversor);
+
+            (d.strings || []).forEach(st => anadirString(inversor, st));
+            if (!(d.strings || []).length) anadirString(inversor);
+
+            if (d.fotosAntes) pintarFotos(galeriaDe(inversor, 'antes'), d.fotosAntes);
+            if (d.fotosDespues) pintarFotos(galeriaDe(inversor, 'despues'), d.fotosDespues);
+
+            renumerarInversores();
+            return inversor;
+        }
+
+        const recogerAC = (inversor) => {
+            const ac = {};
+            inversor.querySelectorAll('.campos-ac .medida').forEach(inp => {
+                const clave = inp.getAttribute('data-ac');
+                const momento = inp.getAttribute('data-momento');
+                if (!ac[clave]) ac[clave] = { antes: '', despues: '' };
+                ac[clave][momento] = inp.value;
+            });
+            return ac;
+        };
+
+        // Conecta TODAS las galerías que haya dentro de `raiz`: ahora cada
+        // bloque tiene dos, la del antes y la del después.
+        function conectarSubidaFotos(raiz) {
+            raiz.querySelectorAll('.galeria:not([data-lista])').forEach(galeria => {
+                galeria.setAttribute('data-lista', '1');
+
+                const boton = galeria.querySelector('.image-upload');
+                const input = galeria.querySelector('input[type="file"]');
+                const destino = galeria.querySelector('.image-preview-container');
+                if (!boton || !input || !destino) return;
+
+                boton.addEventListener('click', () => input.click());
+                input.addEventListener('change', async (e) => {
+                    boton.classList.add('trabajando');
+                    await agregarImagenes(e.target.files, destino);
+                    boton.classList.remove('trabajando');
+                    e.target.value = ''; // permite volver a elegir la misma foto
+                    guardarInforme();
+                });
             });
         }
 
@@ -2982,6 +3515,12 @@
                 });
             });
 
+            document.getElementById('btn-add-inversor').addEventListener('click', () => {
+                anadirInversor();
+                actualizarResumen();
+                guardarInforme();
+            });
+
             document.getElementById('btn-personalizada').addEventListener('click', () => {
                 const el = crearActividadPersonalizada();
                 el.querySelector('.custom-activity-title').focus();
@@ -3113,8 +3652,12 @@
             const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
             // URLs de imágenes
-            const portadaUrl = 'https://raw.githubusercontent.com/Jairluna16/AUDIOS/refs/heads/main/Curriculum%20CV%20Resume%20Profesional%20Academico%20Creativo%20Simple%20Blanco.png';
-            const fondoUrl = 'https://raw.githubusercontent.com/Jairluna16/AUDIOS/refs/heads/main/2.png';
+            // Recursos de marca, servidos por el propio sitio. Antes se
+            // bajaban de un repositorio ajeno en cada generacion y llevaban el
+            // logo antiguo.
+            const HEADER_URL = '/img/header.jpg';
+            const FOOTER_URL = '/img/footer.jpg';
+            const LOGO_URL = '/img/logo.png';
 
             // Información básica
             const proyectoNombre = document.getElementById('proyectoNombre').value;
@@ -3132,15 +3675,50 @@
             const margin = 15;
             const contentWidth = pageWidth - (2 * margin);
 
-            // Cuantas imagenes por fila pidio el tecnico en ese bloque
-            const getImagesPerRow = (element) => {
-                const input = element.querySelector(
-                    '.activity-images-per-row, .result-images-per-row, ' +
-                    '.anomaly-images-per-row, .recommendation-images-per-row, ' +
-                    '.inversor-images-per-row');
-                const n = input ? parseInt(input.value, 10) : 2;
-                return Math.max(1, Math.min(4, n || 2));
-            };
+            // Carga un recurso de marca y lo pasa a JPEG sobre blanco.
+            // En PNG, jsPDF lo guardaria sin comprimir y el archivo se
+            // dispara; el logo solo ya pesa 55 KB en PNG.
+            const cargarImagen = (url) => new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    try {
+                        const lienzo = document.createElement('canvas');
+                        lienzo.width = img.naturalWidth;
+                        lienzo.height = img.naturalHeight;
+                        const ctx = lienzo.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+                        ctx.drawImage(img, 0, 0);
+                        resolve({
+                            data: lienzo.toDataURL('image/jpeg', 0.92),
+                            ancho: lienzo.width,
+                            alto: lienzo.height
+                        });
+                    } catch (e) { reject(e); }
+                };
+                img.onerror = () => reject(new Error('No se pudo cargar ' + url));
+                img.src = url;
+            });
+
+            const opcional = (promesa) => promesa.catch(e => {
+                console.warn(e.message || e);
+                return null;
+            });
+
+            const [encabezado, pie, logo] = await Promise.all([
+                opcional(cargarImagen(HEADER_URL)),
+                opcional(cargarImagen(FOOTER_URL)),
+                opcional(cargarImagen(LOGO_URL))
+            ]);
+
+            // Altos reales al ancho de la pagina.
+            const ALTO_ENCABEZADO = encabezado ? pageWidth / (encabezado.ancho / encabezado.alto) : 0;
+            const ALTO_PIE = pie ? pageWidth / (pie.ancho / pie.alto) : 0;
+
+            // El texto empieza bajo el encabezado y termina sobre el pie.
+            const TOPE_SUPERIOR = ALTO_ENCABEZADO + 11;
+            const TOPE_INFERIOR = pageHeight - ALTO_PIE - 8;
 
             // ----------------------------------------------------------
             // PROGRESO REAL
@@ -3161,37 +3739,25 @@
                 }
             };
 
-            // ----------------------------------------------------------
-            // REJILLA DE IMAGENES - una sola implementacion para todo el
-            // informe (antes este mismo codigo estaba copiado cinco veces y
-            // las copias ya se habian desincronizado entre si).
-            //
-            // Las fotos NUNCA se recortan: se reducen hasta caber completas
-            // dentro de su celda ("contain") y van centradas. Todas las celdas
-            // de una fila tienen el mismo alto, asi que la fila se ve pareja.
-            // ----------------------------------------------------------
-            const LIMITE_INFERIOR = pageHeight - margin - 10;   // deja aire sobre el pie
-            const ALTO_MIN_FILA = 34;   // por debajo de esto, mejor pasar de pagina
+            const LIMITE_INFERIOR = TOPE_INFERIOR;
 
             // Reserva `alto` mm en la pagina actual; si no caben, pasa a la siguiente.
             const asegurarEspacio = async (alto) => {
                 if (yPos + alto > LIMITE_INFERIOR) {
-                    await addNewPageWithBackground();
-                    yPos = margin + 20;
+                    nuevaPagina();
+                    yPos = TOPE_SUPERIOR;
                     return true;
                 }
                 return false;
             };
 
             // Escribe un parrafo repartiendolo entre paginas si hace falta.
-            // Antes el texto se volcaba de golpe y las lineas que no cabian se
-            // salian del papel.
             const escribirParrafo = async (texto, opciones) => {
                 if (!texto) return;
                 const o = opciones || {};
                 const size = o.size || 11;
                 const estilo = o.style || 'normal';
-                const color = o.color || [31, 41, 55];
+                const color = o.color || [17, 24, 39];
                 const sangria = o.indent || 0;
                 const alto = size * 0.42;
 
@@ -3202,15 +3768,46 @@
                 };
 
                 aplicarEstilo();
-                const lineas = doc.splitTextToSize(texto, contentWidth - sangria);
+                const anchoCaja = contentWidth - sangria;
+                const lineas = doc.splitTextToSize(texto, anchoCaja);
 
-                for (const linea of lineas) {
+                // Justificado: se reparte el sobrante entre los espacios de la
+                // linea. La ultima de cada parrafo se deja como este, que si no
+                // queda con huecos enormes. Tampoco se estira una linea corta
+                // (un titulo de vineta, por ejemplo).
+                const escribirLinea = (linea, ultima) => {
+                    const x = margin + sangria;
+                    const palabras = linea.split(' ').filter(Boolean);
+
+                    if (ultima || palabras.length < 2 || o.justificar === false) {
+                        doc.text(linea, x, yPos);
+                        return;
+                    }
+
+                    const anchoPalabras = palabras.reduce((t, p) => t + doc.getTextWidth(p), 0);
+                    const hueco = (anchoCaja - anchoPalabras) / (palabras.length - 1);
+
+                    // Si hubiera que abrir demasiado, mejor sin justificar:
+                    // una linea con huecos enormes se ve peor que una corta.
+                    if (hueco > doc.getTextWidth(' ') * 2.2) {
+                        doc.text(linea, x, yPos);
+                        return;
+                    }
+
+                    let cx = x;
+                    palabras.forEach(p => {
+                        doc.text(p, cx, yPos);
+                        cx += doc.getTextWidth(p) + hueco;
+                    });
+                };
+
+                for (let i = 0; i < lineas.length; i++) {
                     if (yPos + alto > LIMITE_INFERIOR) {
-                        await addNewPageWithBackground();
-                        yPos = margin + 20;
+                        nuevaPagina();
+                        yPos = TOPE_SUPERIOR;
                         aplicarEstilo();
                     }
-                    doc.text(linea, margin + sangria, yPos);
+                    escribirLinea(lineas[i], i === lineas.length - 1);
                     yPos += alto;
                 }
                 yPos += (o.after === undefined ? 3 : o.after);
@@ -3222,169 +3819,461 @@
                 await asegurarEspacio((o.reserva === undefined ? 26 : o.reserva));
                 doc.setFontSize(o.size || 13);
                 doc.setFont('helvetica', 'bold');
-                const c = o.color || [25, 55, 120];
+                const c = o.color || [17, 24, 39];
                 doc.setTextColor(c[0], c[1], c[2]);
                 doc.text(texto, margin, yPos);
                 yPos += (o.after === undefined ? 10 : o.after);
             };
 
-            const medidasDe = (img) => {
-                const w = parseFloat(img.dataset.w) || img.naturalWidth || 4;
-                const h = parseFloat(img.dataset.h) || img.naturalHeight || 3;
-                return { w: w, h: h, ar: w / h };
-            };
+            // ----------------------------------------------------------
+            // FOTOS
+            //
+            // El jefe pidio tres cosas: que se sepa cual es el antes y cual
+            // el despues, que no se mezclen verticales con horizontales, y
+            // que el tamano se ajuste a cuantas haya.
+            //
+            // Cada fila usa una celda de proporcion unica, y las fotos se
+            // recortan para llenarla (como "object-fit: cover"). Antes se
+            // encajaban enteras dentro de la celda, asi que una vertical
+            // junto a una horizontal dejaba huecos y descuadraba la fila.
+            //
+            // El recorte se hace en un lienzo, lo que ademas reencodea la
+            // foto al tamano real que ocupa en la pagina: el informe que
+            // motivo todo esto pesaba 6,4 MB.
+            // ----------------------------------------------------------
 
-            // Dibuja un pie de foto centrado en `centroX` a partir de yPos.
-            // Devuelve el numero de lineas que ocupo.
-            const pieDeFoto = (texto, centroX, anchoMax) => {
-                if (!texto) return 0;
-                doc.setFontSize(8.5);
-                doc.setFont('helvetica', 'italic');
-                doc.setTextColor(110, 115, 125);
-                const lineas = doc.splitTextToSize(texto, anchoMax);
-                for (let i = 0; i < lineas.length; i++) {
-                    doc.text(lineas[i], centroX, yPos + 3.4 + (i * 3.6), { align: 'center' });
+            // Todas las fotos del informe miden lo mismo: dos por fila, en
+            // proporcion 4:3, recortadas al centro para llenar la celda.
+            //
+            // Antes el tamano variaba segun cuantas hubiera en cada bloque, y
+            // el resultado era un documento donde ninguna foto media igual que
+            // la de al lado. Un tamano unico es lo que hace que la pagina se
+            // vea ordenada.
+            const COLUMNAS = 2;
+            const HUECO = 6;
+
+            // Celda vertical: en campo las fotos se toman de pie con el
+            // celular. Recortarlas a formato apaisado se llevaba mas de la
+            // mitad de la imagen.
+            const PROPORCION = 3 / 4;
+            const ANCHO_CELDA = 58;   // 58 x 77,3 mm: dos filas caben por pagina
+            const ALTO_CELDA = ANCHO_CELDA / PROPORCION;
+
+            // El par va centrado en la pagina, como en el informe de
+            // referencia, no pegado al margen: media pagina vacia a la
+            // derecha se veria peor que un bloque centrado.
+            const ANCHO_PAR = ANCHO_CELDA * COLUMNAS + HUECO * (COLUMNAS - 1);
+            const INICIO_X = margin + (contentWidth - ANCHO_PAR) / 2;
+
+            // Recorte al centro a una proporcion cualquiera. Lo usa la
+            // franja de la portada, que es mucho mas ancha que alta.
+            const recortarA = (img, proporcion, anchoMm) => {
+                const px = Math.round(anchoMm / 25.4 * 160);
+                const alto = Math.round(px / proporcion);
+
+                const lienzo = document.createElement('canvas');
+                lienzo.width = px;
+                lienzo.height = alto;
+                const ctx = lienzo.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, px, alto);
+
+                const w = img.naturalWidth || Number(img.dataset.w) || 4;
+                const h = img.naturalHeight || Number(img.dataset.h) || 3;
+
+                let sx, sy, sw, sh;
+                if (w / h > proporcion) {
+                    sh = h; sw = h * proporcion; sx = (w - sw) / 2; sy = 0;
+                } else {
+                    sw = w; sh = w / proporcion; sx = 0; sy = (h - sh) / 2;
                 }
-                return lineas.length;
+
+                ctx.drawImage(img, sx, sy, sw, sh, 0, 0, px, alto);
+                return lienzo.toDataURL('image/jpeg', 0.82);
             };
 
-            const dibujarGrid = async (imageItems, imagesPerRow) => {
-                const items = Array.from(imageItems).filter(it => {
-                    const img = it.querySelector('img');
-                    return img && img.src;
-                });
-                if (items.length === 0) return;
+            // Recorta al centro y devuelve un JPEG del tamano que hara falta.
+            const recortar = (img) => {
+                const px = Math.round(ANCHO_CELDA / 25.4 * 160);   // ~160 ppp
+                const alto = Math.round(px / PROPORCION);
 
-                const cols = Math.max(1, Math.min(4, parseInt(imagesPerRow, 10) || 2));
-                const gap = 4;
-                const cellW = (contentWidth - gap * (cols - 1)) / cols;
-                // Con una sola foto por fila se permite mas alto; con varias la
-                // celda se mantiene proporcionada para no comerse la pagina.
-                const cellHMax = cols === 1 ? 118 : cellW * 1.15;
+                const lienzo = document.createElement('canvas');
+                lienzo.width = px;
+                lienzo.height = alto;
+                const ctx = lienzo.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, px, alto);
 
-                const pies = items.map(it => {
-                    const c = it.querySelector('.image-caption');
-                    return (c && c.value ? c.value : '').trim();
-                });
-                // Si todos los pies son iguales (o estan vacios) se pone uno solo
-                // debajo del conjunto; si son distintos, uno por foto.
-                const pieIndividual = !pies.every(p => p === pies[0]);
+                const w = img.naturalWidth || Number(img.dataset.w) || 4;
+                const h = img.naturalHeight || Number(img.dataset.h) || 3;
 
-                for (let i = 0; i < items.length; i += cols) {
-                    const fila = items.slice(i, i + cols);
-                    const medidas = fila.map(it => medidasDe(it.querySelector('img')));
+                let sx, sy, sw, sh;
+                if (w / h > PROPORCION) {      // sobra ancho: se recorta a los lados
+                    sh = h;
+                    sw = h * PROPORCION;
+                    sx = (w - sw) / 2;
+                    sy = 0;
+                } else {                        // sobra alto: se recorta arriba y abajo
+                    sw = w;
+                    sh = w / PROPORCION;
+                    sx = 0;
+                    sy = (h - sh) / 2;
+                }
 
-                    // Alto de la fila = el que necesite la foto mas alta, con tope.
-                    let cellH = 0;
-                    medidas.forEach(m => {
-                        cellH = Math.max(cellH, Math.min(cellHMax, cellW / m.ar));
+                ctx.drawImage(img, sx, sy, sw, sh, 0, 0, px, alto);
+                return lienzo.toDataURL('image/jpeg', 0.82);
+            };
+
+            // Rotulo bajo cada foto: "Antes" o "Despues", y el pie que haya
+            // escrito el tecnico. Va debajo de cada una, no encima del grupo,
+            // para que una fila pueda mostrar el antes y el despues juntos.
+            const rotularFoto = (momento, pie, centroX, ancho) => {
+                let lineas = 0;
+
+                if (momento) {
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(17, 24, 39);
+                    doc.text(momento, centroX, yPos + 3.4, { align: 'center' });
+                    lineas = 1;
+                }
+
+                if (pie) {
+                    doc.setFontSize(7.5);
+                    doc.setFont('helvetica', 'italic');
+                    doc.setTextColor(110, 115, 125);
+                    const trozos = doc.splitTextToSize(pie, ancho - 2);
+                    trozos.forEach((t, i) => {
+                        doc.text(t, centroX, yPos + 3.4 + (lineas + i) * 3.3, { align: 'center' });
                     });
+                    lineas += trozos.length;
+                }
 
-                    const altoPie = pieIndividual ? 12 : 0;
+                return lineas;
+            };
 
-                    if (yPos + cellH + altoPie > LIMITE_INFERIOR) {
-                        const disponible = LIMITE_INFERIOR - yPos - altoPie;
-                        if (disponible >= ALTO_MIN_FILA) {
-                            cellH = Math.min(cellH, disponible);  // encoge y llena la pagina
-                        } else {
-                            await addNewPageWithBackground();
-                            yPos = margin + 20;
-                        }
-                    }
+            // `fotos` es una lista de { img, momento, pie }.
+            const dibujarFotos = async (fotos) => {
+                if (!fotos.length) return;
 
-                    const anchoFila = fila.length * cellW + (fila.length - 1) * gap;
-                    const inicioX = margin + (contentWidth - anchoFila) / 2;
+                for (let i = 0; i < fotos.length; i += COLUMNAS) {
+                    const fila = fotos.slice(i, i + COLUMNAS);
 
-                    for (let j = 0; j < fila.length; j++) {
-                        const m = medidas[j];
-                        let h = Math.min(cellH, cellW / m.ar);
-                        let w = h * m.ar;
-                        if (w > cellW) { w = cellW; h = w / m.ar; }
+                    // La fila entra entera o pasa de pagina: nunca se parte
+                    // una foto de su rotulo.
+                    await asegurarEspacio(ALTO_CELDA + 9);
 
-                        const x = inicioX + j * (cellW + gap) + (cellW - w) / 2;
-                        const y = yPos + (cellH - h) / 2;   // centrada en su celda
-
+                    fila.forEach((foto, j) => {
+                        const x = INICIO_X + j * (ANCHO_CELDA + HUECO);
                         try {
-                            doc.addImage(fila[j].querySelector('img').src, 'JPEG', x, y, w, h);
+                            doc.addImage(recortar(foto.img), 'JPEG',
+                                         x, yPos, ANCHO_CELDA, ALTO_CELDA);
+                            doc.setDrawColor(222, 226, 232);
+                            doc.setLineWidth(0.2);
+                            doc.rect(x, yPos, ANCHO_CELDA, ALTO_CELDA);
                         } catch (error) {
                             console.error('Error agregando imagen:', error);
                         }
                         fotosDibujadas++;
-                    }
+                    });
 
-                    yPos += cellH + 2;
+                    yPos += ALTO_CELDA + 1.5;
 
-                    if (pieIndividual) {
-                        let maxLineas = 0;
-                        for (let j = 0; j < fila.length; j++) {
-                            const centroX = inicioX + j * (cellW + gap) + cellW / 2;
-                            maxLineas = Math.max(maxLineas, pieDeFoto(pies[i + j], centroX, cellW - 2));
-                        }
-                        yPos += maxLineas * 3.6 + 5;
-                    }
+                    let maxLineas = 0;
+                    fila.forEach((foto, j) => {
+                        const centroX = INICIO_X + j * (ANCHO_CELDA + HUECO) + ANCHO_CELDA / 2;
+                        maxLineas = Math.max(maxLineas,
+                            rotularFoto(foto.momento, foto.pie, centroX, ANCHO_CELDA));
+                    });
+                    yPos += maxLineas * 3.3 + 4;
 
                     reportarProgreso();
-                    // Deja respirar al navegador para que la barra se repinte
                     await new Promise(r => setTimeout(r, 0));
                 }
-
-                if (!pieIndividual && pies[0]) {
-                    if (yPos + 12 > LIMITE_INFERIOR) {
-                        await addNewPageWithBackground();
-                        yPos = margin + 20;
-                    }
-                    const n = pieDeFoto(pies[0], pageWidth / 2, contentWidth * 0.8);
-                    yPos += n * 3.6 + 5;
-                }
-
-                yPos += 3;
             };
 
-            // Agregar portada
-            try {
-                doc.addImage(portadaUrl, 'PNG', 0, 0, pageWidth, pageHeight);
-            } catch (error) {
-                console.error('Error cargando portada:', error);
+            // Reune las fotos de un bloque EMPAREJADAS: cada fila lleva un
+            // antes y su despues, uno al lado del otro. Es la comparacion que
+            // pedia el revisor; puestas en bloques separados habia que pasar
+            // paginas para contrastar el mismo punto.
+            //
+            // Si un grupo tiene mas fotos que el otro, las sobrantes van
+            // detras en filas propias, cada una con su rotulo.
+            const recogerDelBloque = (bloque) => {
+                const leer = (clave, rotulo) => {
+                    const cont = bloque.querySelector(
+                        '.galeria[data-momento="' + clave + '"] .image-preview-container');
+                    if (!cont) return [];
+                    return Array.from(cont.querySelectorAll('.image-preview-item'))
+                        .map(item => {
+                            const img = item.querySelector('img');
+                            if (!img || !img.src) return null;
+                            const pie = item.querySelector('.image-caption');
+                            return {
+                                img: img,
+                                momento: rotulo,
+                                pie: (pie && pie.value ? pie.value : '').trim()
+                            };
+                        })
+                        .filter(Boolean);
+                };
+
+                const antes = leer('antes', 'Antes');
+                const despues = leer('despues', 'Después');
+
+                const lista = [];
+                const pares = Math.min(antes.length, despues.length);
+                for (let i = 0; i < pares; i++) {
+                    lista.push(antes[i], despues[i]);
+                }
+                return lista.concat(antes.slice(pares), despues.slice(pares));
+            };
+
+            const dibujarGalerias = async (bloque) => {
+                await dibujarFotos(recogerDelBloque(bloque));
+            };
+
+            // ----------------------------------------------------------
+            // TABLAS
+            // ----------------------------------------------------------
+            const dibujarTabla = async (encabezados, filas, anchos) => {
+                const altoFila = 6.2;
+                const total = anchos.reduce((a, b) => a + b, 0);
+                const x0 = margin + (contentWidth - total) / 2;
+
+                const pintarEncabezado = () => {
+                    doc.setFillColor(55, 65, 81);
+                    doc.rect(x0, yPos, total, altoFila, 'F');
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(255, 255, 255);
+                    let x = x0;
+                    encabezados.forEach((h, i) => {
+                        doc.text(String(h), x + anchos[i] / 2, yPos + 4.2, { align: 'center' });
+                        x += anchos[i];
+                    });
+                    yPos += altoFila;
+                };
+
+                await asegurarEspacio(altoFila * 3);
+                pintarEncabezado();
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+
+                for (let f = 0; f < filas.length; f++) {
+                    if (yPos + altoFila > LIMITE_INFERIOR) {
+                        nuevaPagina();
+                        yPos = TOPE_SUPERIOR;
+                        pintarEncabezado();
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(8.5);
+                    }
+
+                    if (f % 2 === 1) {
+                        doc.setFillColor(244, 246, 250);
+                        doc.rect(x0, yPos, total, altoFila, 'F');
+                    }
+
+                    doc.setTextColor(17, 24, 39);
+                    let x = x0;
+                    filas[f].forEach((celda, i) => {
+                        const texto = (celda === '' || celda === null || celda === undefined) ? '--' : String(celda);
+                        // La primera columna identifica la fila: va alineada a la
+                        // izquierda; las cifras, centradas.
+                        if (i === 0) {
+                            doc.setFont('helvetica', 'bold');
+                            doc.text(texto, x + 2, yPos + 4.2);
+                            doc.setFont('helvetica', 'normal');
+                        } else {
+                            doc.text(texto, x + anchos[i] / 2, yPos + 4.2, { align: 'center' });
+                        }
+                        x += anchos[i];
+                    });
+
+                    doc.setDrawColor(226, 232, 240);
+                    doc.setLineWidth(0.15);
+                    doc.line(x0, yPos + altoFila, x0 + total, yPos + altoFila);
+                    yPos += altoFila;
+                }
+
+                yPos += 4;
+            };
+
+            // Etiquetas de las filas AC, iguales a las del formulario.
+            const ROTULOS_AC = {
+                v12: 'Tensión L1-L2 (V)', v23: 'Tensión L2-L3 (V)', v13: 'Tensión L1-L3 (V)',
+                v1n: 'Tensión L1-N (V)', v2n: 'Tensión L2-N (V)', v3n: 'Tensión L3-N (V)',
+                vnt: 'Tensión N-T (V)',
+                i1: 'Corriente L1 (A)', i2: 'Corriente L2 (A)', i3: 'Corriente L3 (A)'
+            };
+
+            // Tabla AC de un bloque cualquiera (totalizador o inversor).
+            const dibujarTablaAC = async (bloque) => {
+                const ac = {};
+                bloque.querySelectorAll('.campos-ac .medida').forEach(inp => {
+                    const clave = inp.getAttribute('data-ac');
+                    if (!ac[clave]) ac[clave] = {};
+                    ac[clave][inp.getAttribute('data-momento')] = inp.value;
+                });
+                const filas = Object.keys(ac)
+                    .filter(k => (ac[k].antes || '') !== '' || (ac[k].despues || '') !== '')
+                    .map(k => [ROTULOS_AC[k] || k, ac[k].antes || '', ac[k].despues || '']);
+
+                if (!filas.length) return false;
+                await escribirParrafo('Salida AC',
+                    { size: 9, style: 'bold', color: [55, 65, 81], after: 2, justificar: false });
+                await dibujarTabla(['Medida', 'Antes', 'Después'], filas, [80, 50, 50]);
+                return true;
+            };
+
+            const dibujarMediciones = async () => {
+                const totalizador = document.getElementById('totalizador');
+                const inversores = document.querySelectorAll('#contenedor-inversores .inversor-med');
+
+                const hayTotalizador = Array.from(
+                    totalizador.querySelectorAll('.campos-ac .medida')).some(i => i.value !== '');
+                if (!inversores.length && !hayTotalizador) return;
+
+                yPos += 5;
+                await escribirTitulo('MEDICIONES ELÉCTRICAS');
+
+                if (hayTotalizador) {
+                    await asegurarEspacio(40);
+                    await escribirParrafo('TOTALIZADOR AC',
+                        { size: 11, style: 'bold', color: [17, 24, 39], after: 3, justificar: false });
+                    await dibujarTablaAC(totalizador);
+                    await dibujarGalerias(totalizador);
+                    yPos += 3;
+                }
+
+                for (const inv of inversores) {
+                    const nombre = inv.querySelector('.nombre-inversor').textContent.trim();
+                    await asegurarEspacio(40);
+                    await escribirParrafo(nombre.toUpperCase(),
+                        { size: 11, style: 'bold', color: [17, 24, 39], after: 3, justificar: false });
+
+                    // --- Strings (DC) ---
+                    const strings = Array.from(inv.querySelectorAll('.string-fila')).map(st => {
+                        const v = (sel) => (st.querySelector(sel) || {}).value || '';
+                        return [
+                            'String ' + ((st.querySelector('.num-string') || {}).value || '?'),
+                            v('.v-antes'), v('.i-antes'), v('.v-despues'), v('.i-despues')
+                        ];
+                    }).filter(f => f.slice(1).some(c => c !== ''));
+
+                    if (strings.length) {
+                        await escribirParrafo('Strings (DC)',
+                            { size: 9, style: 'bold', color: [55, 65, 81], after: 2, justificar: false });
+                        await dibujarTabla(
+                            ['String', 'V antes', 'I antes', 'V después', 'I después'],
+                            strings,
+                            [36, 36, 36, 36, 36]
+                        );
+                    }
+
+                    await dibujarTablaAC(inv);
+
+                    await dibujarGalerias(inv);
+                    yPos += 3;
+                }
+            };
+
+            // ==========================================================
+            // PORTADA
+            // Logo centrado arriba, franja de foto a sangre y los datos del
+            // proyecto abajo a la izquierda. Es la misma composicion que usa
+            // el informe de Gestion Documental.
+            // ==========================================================
+            const margenPortada = 20;
+
+            const ARRIBA_LOGO = 55;
+            let bajoLogo = ARRIBA_LOGO + 12 + 14;
+
+            if (logo) {
+                const altoLogo = 18;
+                const anchoLogo = altoLogo * (logo.ancho / logo.alto);
+                doc.addImage(logo.data, 'JPEG', (pageWidth - anchoLogo) / 2, ARRIBA_LOGO,
+                             anchoLogo, altoLogo);
+                bajoLogo = ARRIBA_LOGO + altoLogo + 14;
+            } else {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(18);
+                doc.setTextColor(17, 24, 39);
+                doc.text('SmartEnergy Ing', pageWidth / 2, ARRIBA_LOGO + 12, { align: 'center' });
             }
 
-            // Función auxiliar para agregar página con fondo
-            const addNewPageWithBackground = async () => {
-                doc.addPage();
+            // La franja usa la primera foto del informe, que suele ser la
+            // panoramica de la planta. Si no hay ninguna, queda el azul.
+            const ALTO_FRANJA = 105;
+            const primeraFoto = document.querySelector('#pagina-informe .image-preview-item img');
+
+            doc.setFillColor(26, 54, 93);
+            doc.rect(0, bajoLogo, pageWidth, ALTO_FRANJA, 'F');
+
+            if (primeraFoto && primeraFoto.src) {
                 try {
-                    doc.addImage(fondoUrl, 'PNG', 0, 0, pageWidth, pageHeight);
+                    doc.addImage(recortarA(primeraFoto, pageWidth / ALTO_FRANJA, pageWidth),
+                                 'JPEG', 0, bajoLogo, pageWidth, ALTO_FRANJA);
                 } catch (error) {
-                    console.error('Error cargando fondo:', error);
+                    console.warn('No se pudo usar la foto de portada:', error);
                 }
-            };
+            }
 
-            // Agregar nueva página con fondo
-            await addNewPageWithBackground();
+            let textoY = bajoLogo + ALTO_FRANJA + 18;
 
-            let yPos = margin + 25;
-
-            // Título principal
-            doc.setFontSize(18);
-            doc.setTextColor(25, 55, 120);
             doc.setFont('helvetica', 'bold');
-            doc.text('INFORME TÉCNICO', pageWidth / 2, yPos, { align: 'center' });
-            yPos += 8;
+            doc.setFontSize(10.5);
+            doc.setTextColor(17, 24, 39);
+            doc.text('ENERGÍA SOLAR FOTOVOLTAICA', margenPortada, textoY);
+            textoY += 6;
 
-            // Información del proyecto
-            doc.setFontSize(11);
-            doc.setTextColor(31, 41, 55);
+            doc.text('Proyecto:', margenPortada, textoY);
+            textoY += 5.5;
+
             doc.setFont('helvetica', 'normal');
-            doc.text(`Proyecto: ${proyectoNombre}`, margin, yPos);
+            const lineasNombre = doc.splitTextToSize(proyectoNombre, pageWidth - margenPortada * 2);
+            doc.text(lineasNombre, margenPortada, textoY);
+            textoY += lineasNombre.length * 5.5 + 10;
+
+            doc.setFontSize(9.5);
+            doc.setTextColor(74, 85, 104);
+            doc.text((ubicacion || 'Sin especificar') + ', ' + fechaLegible, margenPortada, textoY);
+            textoY += 5.5;
+            doc.text('Realizado por: ' + tecnicoNombre, margenPortada, textoY);
+
+            // ==========================================================
+            // A partir de aqui, paginas de contenido. El encabezado y el pie
+            // se estampan al final, cuando ya se sabe cuantas hay.
+            // ==========================================================
+            const nuevaPagina = () => doc.addPage();
+
+            nuevaPagina();
+            let yPos = TOPE_SUPERIOR;
+
+            doc.setFontSize(16);
+            doc.setTextColor(17, 24, 39);
+            doc.setFont('helvetica', 'bold');
+            doc.text('INFORME TÉCNICO', margin, yPos);
+            yPos += 9;
+
+            doc.setFontSize(10.5);
+            doc.setFont('helvetica', 'normal');
+            [['Proyecto', proyectoNombre],
+             ['Ubicación', ubicacion || 'Sin especificar'],
+             ['Fecha', fechaLegible],
+             ['Realizado por', tecnicoNombre]].forEach(([rotulo, valor]) => {
+                doc.setFont('helvetica', 'bold');
+                doc.text(rotulo + ':', margin, yPos);
+                doc.setFont('helvetica', 'normal');
+                doc.text(String(valor), margin + 32, yPos);
+                yPos += 5.5;
+            });
             yPos += 7;
-            doc.text(`Ubicación: ${ubicacion || 'Sin especificar'}`, margin, yPos);
-            yPos += 7;
-            doc.text(`Fecha: ${fechaLegible}`, margin, yPos);
-            yPos += 7;
-            doc.text(`Realizado por: ${tecnicoNombre}`, margin, yPos);
-            yPos += 12;
 
             // Introducción
             doc.setFontSize(11);
-            doc.setTextColor(31, 41, 55);
+            doc.setTextColor(17, 24, 39);
             doc.setFont('helvetica', 'bold');
             doc.text('Introducción', margin, yPos);
             yPos += 6;
@@ -3417,7 +4306,7 @@
             ];
 
             for (const punto of scopeItems) {
-                await escribirParrafo(punto, { size: 10, indent: 5, after: 2 });
+                await escribirParrafo(punto, { size: 10, indent: 5, after: 2, justificar: false });
             }
 
             yPos += 5;
@@ -3434,14 +4323,13 @@
                     const titleElem = item.querySelector('.selected-activity-title');
                     const descElem = item.querySelector('.activity-description');
                     const notesElem = item.querySelector('.activity-notes');
-                    const imagesContainer = item.querySelector('.image-preview-container');
 
                     await asegurarEspacio(22);
 
                     // Título de actividad
                     if (titleElem) {
                         await escribirParrafo('• ' + titleElem.textContent.trim(),
-                            { size: 12, style: 'bold', color: [59, 130, 246], after: 2 });
+                            { size: 12, style: 'bold', color: [17, 24, 39], after: 2, justificar: false });
                     }
 
                     // Descripción
@@ -3456,50 +4344,13 @@
                     }
 
                     // Imágenes con captions - manteniendo proporciones originales
-                    if (imagesContainer && imagesContainer.querySelectorAll('img').length > 0) {
-                        const imageItems = imagesContainer.querySelectorAll('.image-preview-item');
-                        await dibujarGrid(imageItems, getImagesPerRow(item));
-                    }
-
-                    // Procesar inversores si esta es "Toma de medidas de strings"
-                    // Por id, no por el texto: si el titulo cambia una tilde,
-                    // antes desaparecia toda la seccion de inversores.
-                    if (item.getAttribute('data-activity-id') === 'prev-5') {
-                        const inversorSection = item.querySelector('.inversor-section');
-                        if (inversorSection) {
-                            const inversorGroups = inversorSection.querySelectorAll('.inversor-group');
-
-                            for (const inversorGroup of inversorGroups) {
-                                const inversorLabel = inversorGroup.querySelector('.inversor-title');
-                                const previewContainer = inversorGroup.querySelector('.inversor-image-preview-container');
-
-
-                                await asegurarEspacio(30);
-
-                                // Título del inversor
-                                if (inversorLabel) {
-                                    yPos += 6;
-                                    await escribirParrafo(inversorLabel.textContent.trim().toUpperCase(),
-                                        { size: 12, style: 'bold', color: [25, 55, 120], after: 4 });
-                                }
-
-                                // Imágenes del inversor
-                                if (previewContainer) {
-                                    const imageItems = previewContainer.querySelectorAll('.image-preview-item');
-
-                                    if (imageItems.length > 0) {
-                                        await dibujarGrid(imageItems, getImagesPerRow(inversorGroup));
-                                    }
-                                }
-
-                                yPos += 3;
-                            }
-                        }
-                    }
+                    await dibujarGalerias(item);
 
                     yPos += 3;
                 }
             }
+
+            await dibujarMediciones();
 
             // Procesar Resultados
             const resultadosContainer = document.getElementById('contenedor-resultados');
@@ -3511,7 +4362,6 @@
 
                 for (const item of resultItems) {
                     const textElem = item.querySelector('.resultado-text');
-                    const imagesContainer = item.querySelector('.image-preview-container');
 
                     await asegurarEspacio(22);
 
@@ -3519,10 +4369,7 @@
                         await escribirParrafo(textElem.value.trim());
                     }
 
-                    if (imagesContainer && imagesContainer.querySelectorAll('img').length > 0) {
-                        const imageItems = imagesContainer.querySelectorAll('.image-preview-item');
-                        await dibujarGrid(imageItems, getImagesPerRow(item));
-                    }
+                    await dibujarGalerias(item);
 
                     yPos += 3;
                 }
@@ -3538,7 +4385,6 @@
 
                 for (const item of anomalyItems) {
                     const textElem = item.querySelector('.anomalia-text');
-                    const imagesContainer = item.querySelector('.image-preview-container');
 
                     await asegurarEspacio(22);
 
@@ -3546,10 +4392,7 @@
                         await escribirParrafo(textElem.value.trim());
                     }
 
-                    if (imagesContainer && imagesContainer.querySelectorAll('img').length > 0) {
-                        const imageItems = imagesContainer.querySelectorAll('.image-preview-item');
-                        await dibujarGrid(imageItems, getImagesPerRow(item));
-                    }
+                    await dibujarGalerias(item);
 
                     yPos += 3;
                 }
@@ -3565,7 +4408,6 @@
 
                 for (const item of recItems) {
                     const textElem = item.querySelector('.recomendacion-text');
-                    const imagesContainer = item.querySelector('.image-preview-container');
 
                     await asegurarEspacio(22);
 
@@ -3573,10 +4415,7 @@
                         await escribirParrafo(textElem.value.trim());
                     }
 
-                    if (imagesContainer && imagesContainer.querySelectorAll('img').length > 0) {
-                        const imageItems = imagesContainer.querySelectorAll('.image-preview-item');
-                        await dibujarGrid(imageItems, getImagesPerRow(item));
-                    }
+                    await dibujarGalerias(item);
 
                     yPos += 3;
                 }
@@ -3596,6 +4435,31 @@
                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                 .replace(/[^\w\s-]/g, '')
                 .trim().replace(/\s+/g, '_') || 'Proyecto';
+
+            // Encabezado, pie y numeracion, en todas menos la portada.
+            const totalPaginas = doc.internal.getNumberOfPages();
+            for (let p = 2; p <= totalPaginas; p++) {
+                doc.setPage(p);
+
+                if (encabezado) {
+                    doc.addImage(encabezado.data, 'JPEG', 0, 0, pageWidth, ALTO_ENCABEZADO);
+                }
+                if (pie) {
+                    doc.addImage(pie.data, 'JPEG', 0, pageHeight - ALTO_PIE, pageWidth, ALTO_PIE);
+                }
+
+                // El nombre del proyecto bajo el encabezado, como en el
+                // informe de referencia.
+                doc.setFontSize(8.5);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(74, 85, 104);
+                doc.text(proyectoNombre, pageWidth - margin, ALTO_ENCABEZADO + 5,
+                         { align: 'right' });
+
+                // La numeracion va sobre la banda del pie, no dentro.
+                doc.text('Página ' + (p - 1) + ' de ' + (totalPaginas - 1),
+                         pageWidth - margin, pageHeight - ALTO_PIE - 3, { align: 'right' });
+            }
 
             if (detalleProgreso) detalleProgreso.textContent = 'Guardando el archivo...';
             doc.save(`Informe_Tecnico_${nombreArchivo}_${fecha}.pdf`);
