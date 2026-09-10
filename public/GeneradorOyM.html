@@ -3829,6 +3829,15 @@
             // Titulo de seccion. No se deja solo al pie de la pagina.
             const escribirTitulo = async (texto, opciones) => {
                 const o = opciones || {};
+
+                // Aire por encima. Un titulo pegado a la ultima foto del
+                // bloque anterior (o a su rotulo "Antes") se lee como si
+                // fuera parte de ese bloque, no como una seccion nueva.
+                // A principio de pagina no hace falta: ahi ya hay margen.
+                if (yPos > TOPE_SUPERIOR) {
+                    yPos += (o.before === undefined ? 14 : o.before);
+                }
+
                 await asegurarEspacio((o.reserva === undefined ? 26 : o.reserva));
                 doc.setFontSize(o.size || 13);
                 doc.setFont('helvetica', 'bold');
@@ -3837,6 +3846,14 @@
                 doc.text(texto, margin, yPos);
                 yPos += (o.after === undefined ? 10 : o.after);
             };
+
+            // Los titulos de cada actividad y de cada medicion llevaban una
+            // viñeta delante. Se quito, pero el texto no se corre al margen:
+            // se sangra justo lo que ocupaba la viñeta, para que siga
+            // alineado donde estaba y no se pegue al borde del parrafo.
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            const SANGRIA_TITULO = doc.getTextWidth('• ');
 
             // ----------------------------------------------------------
             // FOTOS
@@ -4106,8 +4123,22 @@
                     await dibujarFotos(leerGaleria(bloque, 'antes', null));
                     return;
                 }
-                await dibujarFotos(leerGaleria(bloque, 'antes', 'Antes'));
-                await dibujarFotos(leerGaleria(bloque, 'despues', 'Después'));
+
+                const antes = leerGaleria(bloque, 'antes', 'Antes');
+                const despues = leerGaleria(bloque, 'despues', 'Después');
+
+                // Una y una es el antes/despues de toda la vida: van juntas
+                // en la misma fila, que es como se comparan de un vistazo.
+                // Separarlas dejaba una foto sola por grupo y media pagina
+                // en blanco. Con mas de una por lado se siguen dibujando por
+                // separado: mezclarlas haria perder cual es cual.
+                if (antes.length === 1 && despues.length === 1) {
+                    await dibujarFotos(antes.concat(despues));
+                    return;
+                }
+
+                await dibujarFotos(antes);
+                await dibujarFotos(despues);
             };
 
             // ----------------------------------------------------------
@@ -4138,8 +4169,9 @@
                     const v = (sel) => ((el.querySelector(sel) || {}).value || '').trim();
 
                     await asegurarEspacio(reservaDeBloque(el));
-                    await escribirParrafo('• ' + (v('.titulo-medicion') || 'Medición ' + (i + 1)),
-                        { size: 12, style: 'bold', color: [17, 24, 39], after: 2, justificar: false });
+                    await escribirParrafo(v('.titulo-medicion') || 'Medición ' + (i + 1),
+                        { size: 12, style: 'bold', color: [17, 24, 39], after: 2,
+                          justificar: false, indent: SANGRIA_TITULO });
 
                     if (v('.nota-medicion')) {
                         await escribirParrafo(v('.nota-medicion'),
@@ -4156,7 +4188,6 @@
                 const dc = medicionesUtiles('contenedor-strings');
                 if (!ac.length && !dc.length) return;
 
-                yPos += 5;
                 await escribirTitulo('MEDICIONES ELÉCTRICAS');
 
                 if (ac.length) await dibujarGrupoMediciones(ac, 'Mediciones AC');
@@ -4222,9 +4253,10 @@
             doc.text(lineasNombre, margenPortada, textoY);
             textoY += lineasNombre.length * 5.5 + 3;
 
-            // Ubicacion, fecha y autor, uno bajo otro y pegados al nombre.
-            // Antes la ubicacion y la fecha compartian linea y el bloque
-            // quedaba suelto, muy separado del proyecto.
+            // Solo el autor, pegado al nombre del proyecto. La ubicacion y
+            // la fecha se quitaron de la portada: ya van en la ficha de la
+            // primera pagina de contenido, y aqui solo recargaban la
+            // composicion.
             doc.setFontSize(9.5);
             const dato = (rotulo, valor) => {
                 doc.setFont('helvetica', 'bold');
@@ -4237,8 +4269,6 @@
                 textoY += 5;
             };
 
-            dato('Ubicación:', ubicacion || 'Sin especificar');
-            dato('Fecha:', fechaLegible);
             dato('Realizado por:', tecnicoNombre);
 
             // ==========================================================
@@ -4315,7 +4345,6 @@
             const activityItems = activitiesContainer.querySelectorAll('.selected-activity-item');
 
             if (activityItems.length > 0) {
-                yPos += 5;
                 await escribirTitulo('ACTIVIDADES REALIZADAS');
 
                 for (const item of activityItems) {
@@ -4327,8 +4356,9 @@
 
                     // Título de actividad
                     if (titleElem) {
-                        await escribirParrafo('• ' + titleElem.textContent.trim(),
-                            { size: 12, style: 'bold', color: [17, 24, 39], after: 2, justificar: false });
+                        await escribirParrafo(titleElem.textContent.trim(),
+                            { size: 12, style: 'bold', color: [17, 24, 39], after: 2,
+                              justificar: false, indent: SANGRIA_TITULO });
                     }
 
                     // Descripción
@@ -4356,7 +4386,6 @@
             const resultItems = resultadosContainer.querySelectorAll('.dynamic-item');
 
             if (resultItems.length > 0) {
-                yPos += 5;
                 await escribirTitulo('RESULTADOS Y HALLAZGOS');
 
                 for (const item of resultItems) {
@@ -4379,7 +4408,6 @@
             const anomalyItems = anomaliasContainer.querySelectorAll('.dynamic-item');
 
             if (anomalyItems.length > 0) {
-                yPos += 5;
                 await escribirTitulo('ANOMALÍAS DETECTADAS');
 
                 for (const item of anomalyItems) {
@@ -4402,7 +4430,6 @@
             const recItems = recomendacionesContainer.querySelectorAll('.dynamic-item');
 
             if (recItems.length > 0) {
-                yPos += 5;
                 await escribirTitulo('RECOMENDACIONES');
 
                 for (const item of recItems) {
@@ -4423,7 +4450,6 @@
             // Conclusión
             const conclusion = document.getElementById('conclusion').value;
             if (conclusion.trim()) {
-                yPos += 10;
                 await escribirTitulo('CONCLUSIÓN', { after: 8 });
                 await escribirParrafo(conclusion.trim());
             }
