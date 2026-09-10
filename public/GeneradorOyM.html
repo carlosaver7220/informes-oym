@@ -662,6 +662,25 @@
         .pie-foto::placeholder { color: var(--gris-claro); }
         .pie-foto:focus { outline: none; background: var(--azul-suave); }
 
+        /* Nombre de la foto. Solo aparece cuando el bloque va sin comparar:
+           con antes/despues el rotulo ya lo pone la galeria, y dos etiquetas
+           sobre la misma foto se pisarian. */
+        .nombre-foto {
+            display: none;
+            width: 100%;
+            border: 0;
+            border-bottom: 1px solid var(--linea);
+            padding: 3px 5px;
+            font: inherit;
+            font-size: 0.625rem;
+            font-weight: 700;
+            color: var(--tinta);
+            background: var(--panel);
+        }
+        .galerias.lista-unica .nombre-foto { display: block; }
+        .nombre-foto::placeholder { color: var(--gris-claro); font-weight: 500; }
+        .nombre-foto:focus { outline: none; background: var(--azul-suave); }
+
         /* ==========================================================
            BARRA DE ACCIÓN AL PIE DEL FORMULARIO
            ========================================================== */
@@ -831,6 +850,23 @@
         .et-antes { background: #FEF3C7; color: #92400E; }
         .et-portada { background: #E0E7FF; color: #3730A3; }
         .et-despues { background: #D1FAE5; color: #065F46; }
+        .et-fotos { background: #E5E7EB; color: #374151; }
+
+        /* Interruptor de antes/despues, encima de las galerias del bloque. */
+        .opcion-galeria {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin-top: 0.625rem;
+            font-size: 0.8125rem;
+            color: var(--gris);
+            cursor: pointer;
+        }
+        .opcion-galeria input {
+            width: 18px; height: 18px;
+            accent-color: var(--azul);
+            flex: none;
+        }
 
         .cab-galeria .cuenta {
             flex: 1;
@@ -1530,6 +1566,7 @@
 
 <template id="template-image-preview">
     <div class="foto image-preview-item">
+        <input type="text" class="nombre-foto image-name" placeholder="Nombre de la foto">
         <span class="lienzo">
             <img src="" alt="Foto del informe">
             <span class="peso image-peso"></span>
@@ -2594,17 +2631,27 @@
         ).map(item => {
             const img = item.querySelector('img');
             const pie = item.querySelector('.image-caption');
+            const nombre = item.querySelector('.image-name');
             return {
                 data: img ? img.src : '',
                 w: img ? Number(img.dataset.w) || 0 : 0,
                 h: img ? Number(img.dataset.h) || 0 : 0,
-                pie: pie ? pie.value : ''
+                pie: pie ? pie.value : '',
+                nombre: nombre ? nombre.value : ''
             };
         }).filter(f => f.data);
 
         // La galería "antes" o la "después" de un bloque cualquiera.
         const galeriaDe = (bloque, momento) => bloque && bloque.querySelector(
             '.galeria[data-momento="' + momento + '"] .image-preview-container');
+
+        // Si el bloque compara antes/después o lleva una sola lista de fotos.
+        // Los informes viejos no guardaban el dato: comparan, que es como
+        // estaban hechos.
+        const comparaDe = (bloque) => {
+            const casilla = bloque && bloque.querySelector('.usar-comparacion');
+            return casilla ? !!casilla.checked : true;
+        };
 
         const valorDe = (raiz, sel, porDefecto) => {
             const el = raiz && raiz.querySelector(sel);
@@ -2621,6 +2668,7 @@
                 id: el.getAttribute('data-activity-id'),
                 titulo: valorDe(el, '.custom-activity-title'),
                 notas: valorDe(el, '.activity-notes'),
+                comparar: comparaDe(el),
                 fotosAntes: recogerFotos(galeriaDe(el, 'antes')),
                 fotosDespues: recogerFotos(galeriaDe(el, 'despues'))
             }));
@@ -2629,6 +2677,7 @@
                 document.querySelectorAll('#' + contenedorId + ' .dynamic-item')
             ).map(el => ({
                 texto: valorDe(el, claseTexto),
+                comparar: comparaDe(el),
                 fotosAntes: recogerFotos(galeriaDe(el, 'antes')),
                 fotosDespues: recogerFotos(galeriaDe(el, 'despues'))
             }));
@@ -2638,6 +2687,7 @@
             ).map(el => ({
                 titulo: valorDe(el, '.titulo-medicion'),
                 nota: valorDe(el, '.nota-medicion'),
+                comparar: comparaDe(el),
                 fotosAntes: recogerFotos(galeriaDe(el, 'antes')),
                 fotosDespues: recogerFotos(galeriaDe(el, 'despues'))
             }));
@@ -2712,6 +2762,7 @@
                 const item = clon.querySelector('.image-preview-item');
                 const peso = clon.querySelector('.image-peso');
                 const pie = clon.querySelector('.image-caption');
+                const nombre = clon.querySelector('.image-name');
 
                 img.src = f.data;
                 img.dataset.w = f.w;
@@ -2720,6 +2771,7 @@
                 item.draggable = true;
                 if (peso) peso.textContent = pesoLegible(f.data);
                 if (pie) pie.value = f.pie || '';
+                if (nombre) nombre.value = f.nombre || '';
 
                 contenedor.appendChild(clon);
             });
@@ -2756,6 +2808,7 @@
                 if (!el) return;
 
                 ponerValor(el, '.activity-notes', a.notas);
+                ponerComparacion(el, a.comparar);
                 // `a.fotos` es del formato viejo (v2), cuando no había antes
                 // ni después: esas fotos entran como "antes" para no perderlas.
                 pintarFotos(galeriaDe(el, 'antes'), a.fotosAntes || a.fotos);
@@ -2786,6 +2839,7 @@
                     const ultimo = items[items.length - 1];
                     if (!ultimo) return;
                     ponerValor(ultimo, claseTexto, b.texto);
+                    ponerComparacion(ultimo, b.comparar);
                     pintarFotos(galeriaDe(ultimo, 'antes'), b.fotosAntes || b.fotos);
                     pintarFotos(galeriaDe(ultimo, 'despues'), b.fotosDespues);
                 });
@@ -3101,6 +3155,7 @@
             document.getElementById(contenedorId).appendChild(bloque);
             inicializarVoz(bloque);
             conectarSubidaFotos(bloque);
+            ponerComparacion(bloque, d.comparar);
 
             pintarFotos(galeriaDe(bloque, 'antes'), d.fotosAntes);
             pintarFotos(galeriaDe(bloque, 'despues'), d.fotosDespues);
@@ -3172,9 +3227,107 @@
             });
         }
 
+        // ---------- Interruptor de "antes y después" ----------
+        //
+        // Hay mediciones que no tienen un después: la lectura se toma una vez
+        // y ya está. Rotular esas fotos como "Antes" era decir algo que no
+        // pasó, y la galería vacía del después dejaba el bloque a medias.
+        //
+        // Con el interruptor apagado el bloque pasa a una sola lista de fotos,
+        // sin rótulo de momento, y cada foto lleva el nombre que le escriba el
+        // técnico ("L1 a tierra", "Fusible F3"...). Ese nombre sale en el PDF
+        // en el sitio donde iba la palabra "Antes".
+        //
+        // Va encendido de fábrica: comparar sigue siendo lo normal.
+        function aplicarComparacion(galerias, comparar) {
+            galerias.classList.toggle('lista-unica', !comparar);
+
+            const antes = galerias.querySelector('.galeria[data-momento="antes"]');
+            const despues = galerias.querySelector('.galeria[data-momento="despues"]');
+
+            if (despues) {
+                // Las fotos que hubiera en el después no se pierden de vista:
+                // se pasan a la lista única, que es la que sale en el PDF.
+                if (!comparar && antes) {
+                    const destino = antes.querySelector('.image-preview-container');
+                    const origen = despues.querySelector('.image-preview-container');
+                    if (destino && origen) {
+                        while (origen.firstChild) destino.appendChild(origen.firstChild);
+                        enableImageDragAndDrop(destino);
+                    }
+                }
+                despues.classList.toggle('oculto', !comparar);
+            }
+
+            const etiqueta = antes && antes.querySelector('.etiqueta');
+            if (etiqueta) {
+                etiqueta.textContent = comparar ? 'Antes' : 'Fotos';
+                etiqueta.classList.toggle('et-antes', comparar);
+                etiqueta.classList.toggle('et-fotos', !comparar);
+            }
+
+            const subir = antes && antes.querySelector('.image-upload');
+            if (subir) {
+                subir.setAttribute('aria-label', comparar
+                    ? 'Añadir fotos del estado inicial'
+                    : 'Añadir fotos');
+            }
+        }
+
+        // Deja el bloque en el modo guardado. Se llama antes de pintar sus
+        // fotos, para que entren ya en la galería que les toca.
+        function ponerComparacion(bloque, comparar) {
+            const casilla = bloque && bloque.querySelector('.usar-comparacion');
+            const galerias = bloque && bloque.querySelector('.galerias');
+            if (!casilla || !galerias) return;
+            casilla.checked = comparar !== false;
+            aplicarComparacion(galerias, casilla.checked);
+        }
+
+        function conectarComparacion(raiz) {
+            raiz.querySelectorAll('.galerias:not([data-comparacion])').forEach(galerias => {
+                galerias.setAttribute('data-comparacion', '1');
+
+                const fila = document.createElement('label');
+                fila.className = 'opcion-galeria';
+                fila.innerHTML =
+                    '<input type="checkbox" class="usar-comparacion" checked>' +
+                    '<span>Comparar antes y después</span>';
+                galerias.insertAdjacentElement('beforebegin', fila);
+
+                const casilla = fila.querySelector('.usar-comparacion');
+
+                casilla.addEventListener('change', async () => {
+                    // Apagarlo con fotos ya puestas en el después las mueve:
+                    // mejor avisar que hacerlo a la callada.
+                    if (!casilla.checked) {
+                        const despues = galeriaDe(galerias, 'despues');
+                        const cuantas = despues
+                            ? despues.querySelectorAll('.image-preview-item').length : 0;
+                        if (cuantas) {
+                            const ok = await confirmar('Dejar una sola lista',
+                                (cuantas === 1
+                                    ? 'La foto del después se pasa'
+                                    : 'Las ' + cuantas + ' fotos del después se pasan') +
+                                ' a la lista única.',
+                                'Continuar');
+                            if (!ok) { casilla.checked = true; return; }
+                        }
+                    }
+                    aplicarComparacion(galerias, casilla.checked);
+                    actualizarResumen();
+                    guardarInforme();
+                });
+
+                aplicarComparacion(galerias, true);
+            });
+        }
+
         // Conecta TODAS las galerías que haya dentro de `raiz`: ahora cada
         // bloque tiene dos, la del antes y la del después.
         function conectarSubidaFotos(raiz) {
+            conectarComparacion(raiz);
+
             raiz.querySelectorAll('.galeria:not([data-lista])').forEach(galeria => {
                 galeria.setAttribute('data-lista', '1');
 
@@ -3919,40 +4072,42 @@
                 }
             };
 
-            // Reune las fotos de un bloque: primero el grupo del antes,
-            // despues el del despues. Cada foto lleva su rotulo debajo.
-            const recogerDelBloque = (bloque) => {
-                const leer = (clave, rotulo) => {
-                    const cont = bloque.querySelector(
-                        '.galeria[data-momento="' + clave + '"] .image-preview-container');
-                    if (!cont) return [];
-                    return Array.from(cont.querySelectorAll('.image-preview-item'))
-                        .map(item => {
-                            const img = item.querySelector('img');
-                            if (!img || !img.src) return null;
-                            const pie = item.querySelector('.image-caption');
-                            return {
-                                img: img,
-                                momento: rotulo,
-                                pie: (pie && pie.value ? pie.value : '').trim()
-                            };
-                        })
-                        .filter(Boolean);
-                };
-
-                // Agrupadas: primero todas las del antes, luego las del
-                // despues. Intercalarlas ponia una de cada en la misma fila,
-                // y se lee mejor el estado inicial completo y luego el final.
-                return leer('antes', 'Antes').concat(leer('despues', 'Después'));
+            // Reune las fotos de un bloque. `rotulo` es lo que va en negrita
+            // debajo de cada una: "Antes"/"Despues" cuando el bloque compara,
+            // y el nombre que escribio el tecnico cuando no.
+            const leerGaleria = (bloque, clave, rotulo) => {
+                const cont = bloque.querySelector(
+                    '.galeria[data-momento="' + clave + '"] .image-preview-container');
+                if (!cont) return [];
+                return Array.from(cont.querySelectorAll('.image-preview-item'))
+                    .map(item => {
+                        const img = item.querySelector('img');
+                        if (!img || !img.src) return null;
+                        const pie = item.querySelector('.image-caption');
+                        const nombre = item.querySelector('.image-name');
+                        return {
+                            img: img,
+                            momento: rotulo !== null ? rotulo
+                                : (nombre && nombre.value ? nombre.value : '').trim(),
+                            pie: (pie && pie.value ? pie.value : '').trim()
+                        };
+                    })
+                    .filter(Boolean);
             };
 
-            // Cada grupo se dibuja por separado, para que ninguna fila
-            // mezcle un antes con un despues: se leen como dos bloques,
-            // "antes | antes" y luego "despues | despues".
+            // Cada grupo se dibuja por separado, para que ninguna fila mezcle
+            // un antes con un despues: se leen como dos bloques, "antes |
+            // antes" y luego "despues | despues".
+            //
+            // Sin comparacion es una sola lista, asi que las 3, 6 o 9 fotos
+            // se reparten entre si en vez de partirse en dos grupos.
             const dibujarGalerias = async (bloque) => {
-                const fotos = recogerDelBloque(bloque);
-                await dibujarFotos(fotos.filter(f => f.momento === 'Antes'));
-                await dibujarFotos(fotos.filter(f => f.momento !== 'Antes'));
+                if (!comparaDe(bloque)) {
+                    await dibujarFotos(leerGaleria(bloque, 'antes', null));
+                    return;
+                }
+                await dibujarFotos(leerGaleria(bloque, 'antes', 'Antes'));
+                await dibujarFotos(leerGaleria(bloque, 'despues', 'Después'));
             };
 
             // ----------------------------------------------------------
