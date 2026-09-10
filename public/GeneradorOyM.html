@@ -843,8 +843,9 @@
 
         /* ==========================================================
            MEDICIONES ELECTRICAS
-           Antes se entregaban como fotos del multimetro, sin decir a
-           que string pertenecia cada lectura. Ahora son datos.
+           Cada medicion es un bloque libre: el tecnico escribe el
+           titulo, sube la foto del antes y la del despues y anade una
+           observacion si hace falta.
            ========================================================== */
         .sub-bloque {
             display: flex;
@@ -864,106 +865,53 @@
             background: var(--linea);
         }
 
-        .string-fila {
-            border: 1px solid var(--linea);
-            border-radius: var(--r-sm);
-            padding: 0.5rem;
-            margin-bottom: 0.4rem;
-            background: var(--panel);
-        }
-        .string-fila .cab {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            margin-bottom: 0.4rem;
-        }
+        .medicion-item { background: var(--fondo); }
 
+        /* La cabecera lleva un campo de texto en vez de un rotulo fijo:
+           el titulo lo pone el tecnico ("L1 + Tierra", "Totalizador AC"). */
+        .medicion-item .cab-bloque { align-items: center; }
 
-        /* Rejilla de medidas: etiqueta + antes + despues.
-           Con 3 columnas entra sin apreturas incluso a 320 px. */
-        .rejilla-medidas {
-            display: grid;
-            grid-template-columns: minmax(58px, auto) 1fr 1fr;
-            gap: 0.3rem;
+        .medicion-item .indice {
+            flex: none;
+            min-width: 1.35rem;
+            height: 1.35rem;
+            display: inline-flex;
             align-items: center;
-        }
-        .rejilla-medidas .cabecera {
-            font-size: 0.625rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            color: var(--gris-claro);
-            text-align: center;
-        }
-        .rejilla-medidas .cabecera.izq { text-align: left; }
-        .rejilla-medidas .rotulo {
-            font-size: 0.75rem;
-            font-weight: 600;
+            justify-content: center;
+            border-radius: 999px;
+            background: var(--linea);
             color: var(--gris);
+            font-size: 0.6875rem;
+            font-weight: 700;
         }
-        .rejilla-medidas .medida {
-            width: 100%;
-            min-height: 34px;
-            padding: 0.3rem 0.4rem;
+
+        .medicion-item .titulo-medicion {
+            flex: 1;
+            min-width: 0;
+            min-height: 38px;
+            padding: 0.4rem 0.5rem;
             border: 1px solid var(--linea);
             border-radius: var(--r-sm);
-            font-size: 16px; /* iOS no hace zoom */
             font-family: inherit;
-            text-align: center;
+            font-size: 16px; /* iOS no hace zoom */
+            font-weight: 700;
             color: var(--tinta);
             background: var(--panel);
         }
-        .rejilla-medidas .medida:focus {
+        .medicion-item .titulo-medicion:focus {
             outline: none;
             border-color: var(--azul);
             box-shadow: 0 0 0 2px rgba(1, 87, 235, .12);
         }
-        .rejilla-medidas .medida.antes { background: #FFFBEB; }
-        .rejilla-medidas .medida.despues { background: #F0FDF4; }
+        .medicion-item .titulo-medicion::placeholder {
+            font-weight: 500;
+            color: var(--gris-claro);
+        }
 
-        .casilla {
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-            margin: 0.5rem 0;
+        .vacio-medicion {
             font-size: 0.8125rem;
-            color: var(--gris);
-            cursor: pointer;
-        }
-        .casilla input {
-            width: 18px; height: 18px;
-            accent-color: var(--azul);
-            flex: none;
-        }
-
-        .string-fila .cab .rot-string {
-            font-size: 0.8125rem;
-            font-weight: 600;
-        }
-        .string-fila .cab .num-string {
-            width: 54px;
-            min-height: 32px;
-            padding: 0.25rem;
-            border: 1px solid var(--linea);
-            border-radius: var(--r-sm);
-            font: inherit;
-            font-size: 16px;
-            font-weight: 700;
-            text-align: center;
-            color: var(--tinta);
-            background: var(--panel);
-        }
-        .string-fila .cab .num-string:focus {
-            outline: none;
-            border-color: var(--azul);
-        }
-        .string-fila .cab { gap: 0.5rem; }
-        .string-fila .cab .quitar-string { margin-left: auto; }
-
-        .inversor-med { background: var(--fondo); }
-        .inversor-med .nombre-inversor {
-            font-size: 0.9375rem;
-            color: var(--tinta);
+            color: var(--gris-claro);
+            padding: 0.5rem 0.25rem;
         }
 
         .oculto { display: none !important; }
@@ -1217,55 +1165,26 @@
                     <svg class="ic ic-sm flecha"><use href="#i-abajo"/></svg>
                 </button>
                 <div class="cuerpo-seccion" id="cuerpo-mediciones">
-                    <div class="bloque inversor-med" id="totalizador">
-                        <div class="cab-bloque">
-                            <div class="titulo nombre-inversor">Totalizador AC</div>
-                        </div>
-                        <p class="descripcion">Medida general del tablero principal, antes de los breakers de cada circuito.</p>
+                    <p class="descripcion">
+                        Cada medición lleva el título que tú le pongas
+                        («L1 + Tierra», «Totalizador AC»…), sus fotos del antes y el
+                        después y, si hace falta, una observación. Añade tantas como necesites.
+                    </p>
 
-                        <select class="control tipo-ac" aria-label="Tipo de conexión">
-                            <option value="bifasico" selected>Bifásico (L1, L2)</option>
-                            <option value="trifasico">Trifásico (L1, L2, L3)</option>
-                        </select>
-
-                        <label class="casilla">
-                            <input type="checkbox" class="con-neutro" checked>
-                            <span>Medir también de línea a neutro</span>
-                        </label>
-
-                        <div class="rejilla-medidas campos-ac"></div>
-
-            <div class="galerias">
-                <div class="galeria" data-momento="antes">
-                    <div class="cab-galeria">
-                        <span class="etiqueta et-antes">Antes</span>
-                        <span class="cuenta"></span>
-                        <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado inicial">
-                            <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
-                        </button>
-                        <input type="file" multiple accept="image/*" hidden>
-                    </div>
-                    <div class="fotos image-preview-container"></div>
-                </div>
-
-                <div class="galeria" data-momento="despues">
-                    <div class="cab-galeria">
-                        <span class="etiqueta et-despues">Después</span>
-                        <span class="cuenta"></span>
-                        <button type="button" class="bi image-upload" aria-label="Anadir fotos del estado final">
-                            <svg class="ic ic-sm"><use href="#i-camara-mas"/></svg>
-                        </button>
-                        <input type="file" multiple accept="image/*" hidden>
-                    </div>
-                    <div class="fotos image-preview-container"></div>
-                </div>
-            </div>
-                    </div>
-
-                    <div id="contenedor-inversores"></div>
-                    <button type="button" class="btn btn-linea btn-ancho" id="btn-add-inversor" style="margin-top:.5rem;">
+                    <div class="sub-bloque">Mediciones AC</div>
+                    <div id="contenedor-mediciones"></div>
+                    <p class="vacio-medicion" id="sin-mediciones">Todavía no has añadido mediciones.</p>
+                    <button type="button" class="btn btn-linea btn-ancho" id="btn-add-medicion">
                         <svg class="ic ic-sm"><use href="#i-mas"/></svg>
-                        Añadir inversor
+                        Añadir medición
+                    </button>
+
+                    <div class="sub-bloque">Mediciones de string (DC)</div>
+                    <div id="contenedor-strings"></div>
+                    <p class="vacio-medicion" id="sin-mediciones-string">Todavía no has añadido mediciones de string.</p>
+                    <button type="button" class="btn btn-linea btn-ancho" id="btn-add-string">
+                        <svg class="ic ic-sm"><use href="#i-mas"/></svg>
+                        Añadir medición de string
                     </button>
                 </div>
             </section>
@@ -1622,36 +1541,21 @@
     </div>
 </template>
 
-<template id="template-inversor-med">
-    <div class="bloque inversor-med">
+<template id="template-medicion">
+    <div class="bloque medicion-item">
         <div class="cab-bloque">
-            <div class="titulo nombre-inversor"></div>
-            <button type="button" class="bi bi-peligro quitar-inversor" aria-label="Quitar inversor">
+            <span class="indice"></span>
+            <input type="text" class="titulo-medicion" placeholder="Título de la medición">
+            <button type="button" class="bi bi-peligro quitar-medicion" aria-label="Quitar medición">
                 <svg class="ic ic-sm"><use href="#i-x"/></svg>
             </button>
         </div>
 
-        <div class="sub-bloque">Strings (DC)</div>
-        <div class="lista-strings"></div>
-        <button type="button" class="btn btn-linea btn-ancho add-string">
-            <svg class="ic ic-sm"><use href="#i-mas"/></svg>
-            Añadir string
-        </button>
+        <textarea class="control nota-medicion" data-voz="Observación de la medición" rows="2"
+                  placeholder="Observación (opcional): qué se midió, con qué equipo, qué se encontró…"></textarea>
 
-        <div class="sub-bloque">Salida AC</div>
-        <select class="control tipo-ac" aria-label="Tipo de conexión AC">
-            <option value="bifasico" selected>Bifásico (L1, L2)</option>
-            <option value="trifasico">Trifásico (L1, L2, L3)</option>
-        </select>
+        <div class="acciones" data-acciones></div>
 
-        <label class="casilla">
-            <input type="checkbox" class="con-neutro" checked>
-            <span>Medir también de línea a neutro</span>
-        </label>
-
-        <div class="rejilla-medidas campos-ac"></div>
-
-        <div class="sub-bloque">Fotografías del inversor</div>
         <div class="galerias">
             <div class="galeria" data-momento="antes">
                 <div class="cab-galeria">
@@ -1676,32 +1580,6 @@
                 </div>
                 <div class="fotos image-preview-container"></div>
             </div>
-        </div>
-    </div>
-</template>
-
-<template id="template-string">
-    <div class="string-fila">
-        <div class="cab">
-            <span class="rot-string">String</span>
-            <input type="number" class="num-string" min="1" max="99" inputmode="numeric"
-                   aria-label="Número de string">
-            <button type="button" class="bi bi-peligro quitar-string" aria-label="Quitar string">
-                <svg class="ic ic-sm"><use href="#i-x"/></svg>
-            </button>
-        </div>
-        <div class="rejilla-medidas">
-            <span class="cabecera izq"></span>
-            <span class="cabecera">Antes</span>
-            <span class="cabecera">Después</span>
-
-            <span class="rotulo">Tensión (V)</span>
-            <input class="medida antes v-antes" type="number" inputmode="decimal" step="any" placeholder="—">
-            <input class="medida despues v-despues" type="number" inputmode="decimal" step="any" placeholder="—">
-
-            <span class="rotulo">Corriente (A)</span>
-            <input class="medida antes i-antes" type="number" inputmode="decimal" step="any" placeholder="—">
-            <input class="medida despues i-despues" type="number" inputmode="decimal" step="any" placeholder="—">
         </div>
     </div>
 </template>
@@ -2551,7 +2429,8 @@
                 anomalias: cuenta('#contenedor-anomalias .dynamic-item'),
                 recomendaciones: cuenta('#contenedor-recomendaciones .dynamic-item'),
                 fotos: cuenta('#pagina-informe .image-preview-item'),
-                mediciones: cuenta('#contenedor-inversores .string-fila')
+                mediciones: cuenta('#contenedor-mediciones .medicion-item')
+                          + cuenta('#contenedor-strings .medicion-item')
             };
 
             const zona = document.getElementById('resumen');
@@ -2581,11 +2460,21 @@
             globo('globo-anomalias', n.anomalias);
             globo('globo-recomendaciones', n.recomendaciones);
 
-            const inversores = cuenta('#contenedor-inversores .inversor-med');
-            globo('globo-mediciones', inversores);
+            globo('globo-mediciones', n.mediciones);
 
             const sin = document.getElementById('sin-actividades');
             if (sin) sin.classList.toggle('oculto', n.actividades > 0);
+
+            // Los avisos de "todavía no hay nada" solo estorban en cuanto
+            // hay un bloque puesto.
+            const vacio = (id, contenedorId) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.classList.toggle('oculto',
+                    cuenta('#' + contenedorId + ' .medicion-item') > 0);
+            };
+            vacio('sin-mediciones', 'contenedor-mediciones');
+            vacio('sin-mediciones-string', 'contenedor-strings');
 
             // Cada galería dice cuántas fotos lleva, para que el técnico vea
             // de un vistazo si le falta el "después".
@@ -2744,39 +2633,22 @@
                 fotosDespues: recogerFotos(galeriaDe(el, 'despues'))
             }));
 
-            const inversores = Array.from(
-                document.querySelectorAll('#contenedor-inversores .inversor-med')
-            ).map(inv => ({
-                nombre: inv.querySelector('.nombre-inversor').textContent,
-                tipoAC: valorDe(inv, '.tipo-ac', 'bifasico'),
-                conNeutro: !!inv.querySelector('.con-neutro').checked,
-                ac: recogerAC(inv),
-                strings: Array.from(inv.querySelectorAll('.string-fila')).map(st => ({
-                    numero: valorDe(st, '.num-string', '1'),
-                    vAntes: valorDe(st, '.v-antes'),
-                    vDespues: valorDe(st, '.v-despues'),
-                    iAntes: valorDe(st, '.i-antes'),
-                    iDespues: valorDe(st, '.i-despues')
-                })),
-                fotosAntes: recogerFotos(galeriaDe(inv, 'antes')),
-                fotosDespues: recogerFotos(galeriaDe(inv, 'despues'))
+            const mediciones = (contenedorId) => Array.from(
+                document.querySelectorAll('#' + contenedorId + ' .medicion-item')
+            ).map(el => ({
+                titulo: valorDe(el, '.titulo-medicion'),
+                nota: valorDe(el, '.nota-medicion'),
+                fotosAntes: recogerFotos(galeriaDe(el, 'antes')),
+                fotosDespues: recogerFotos(galeriaDe(el, 'despues'))
             }));
 
-            const tot = document.getElementById('totalizador');
             const portada = recogerFotos(
                 document.querySelector('.galeria-portada .image-preview-container'));
 
             return {
                 fotoPortada: portada[0] || null,
                 id: informeActivo,
-                v: 4,
-                totalizador: {
-                    tipoAC: valorDe(tot, '.tipo-ac', 'bifasico'),
-                    conNeutro: !!tot.querySelector('.con-neutro').checked,
-                    ac: recogerAC(tot),
-                    fotosAntes: recogerFotos(galeriaDe(tot, 'antes')),
-                    fotosDespues: recogerFotos(galeriaDe(tot, 'despues'))
-                },
+                v: 5,
                 actualizado: Date.now(),
                 proyectoNombre: val('proyectoNombre'),
                 ubicacion: val('ubicacion'),
@@ -2784,7 +2656,8 @@
                 tecnicoNombre: val('tecnicoNombre'),
                 conclusion: val('conclusion'),
                 actividades: actividades,
-                inversores: inversores,
+                mediciones: mediciones('contenedor-mediciones'),
+                medicionesString: mediciones('contenedor-strings'),
                 resultados: bloques('contenedor-resultados', '.resultado-text'),
                 anomalias: bloques('contenedor-anomalias', '.anomalia-text'),
                 recomendaciones: bloques('contenedor-recomendaciones', '.recomendacion-text')
@@ -2894,14 +2767,17 @@
                             [informe.fotoPortada]);
             }
 
-            const tot = document.getElementById('totalizador');
-            conectarAC(tot, informe.totalizador || {});
-            if (informe.totalizador) {
-                pintarFotos(galeriaDe(tot, 'antes'), informe.totalizador.fotosAntes);
-                pintarFotos(galeriaDe(tot, 'despues'), informe.totalizador.fotosDespues);
+            // Los informes hechos antes (v4) guardaban tablas de números bajo
+            // «totalizador» e «inversores». Se convierten en bloques de
+            // medición: las fotos se conservan y las lecturas pasan a la
+            // observación, para no perder nada de lo ya entregado.
+            const listaAC = (informe.mediciones || []).slice();
+            const listaDC = (informe.medicionesString || []).slice();
+            if (!informe.mediciones && !informe.medicionesString) {
+                migrarMedicionesV4(informe, listaAC, listaDC);
             }
-
-            (informe.inversores || []).forEach(inv => anadirInversor(inv));
+            listaAC.forEach(m => anadirMedicion('contenedor-mediciones', m));
+            listaDC.forEach(m => anadirMedicion('contenedor-strings', m));
 
             const restaurarBloques = (lista, botonId, contenedorId, claseTexto) => {
                 (lista || []).forEach(b => {
@@ -2926,7 +2802,8 @@
                 .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 
             document.getElementById('contenedor-actividades').innerHTML = '';
-            document.getElementById('contenedor-inversores').innerHTML = '';
+            document.getElementById('contenedor-mediciones').innerHTML = '';
+            document.getElementById('contenedor-strings').innerHTML = '';
             document.getElementById('contenedor-resultados').innerHTML = '';
             document.getElementById('contenedor-anomalias').innerHTML = '';
             document.getElementById('contenedor-recomendaciones').innerHTML = '';
@@ -3027,8 +2904,10 @@
                 .filter(a => a.porDefecto)
                 .forEach(a => addSelectedActivity('preventive', a.id, true));
 
-            conectarAC(document.getElementById('totalizador'), {});
-            anadirInversor();
+            // Una medición de cada tipo ya puesta: es lo que el técnico
+            // va a rellenar de todas formas, y así ve de qué van los bloques.
+            anadirMedicion('contenedor-mediciones');
+            anadirMedicion('contenedor-strings');
 
             mostrarPagina('pagina-informe');
             document.getElementById('proyectoNombre').focus();
@@ -3136,7 +3015,7 @@
 
             // "Toma de medidas de strings" ya no lleva nada especial: las
             // lecturas se capturan en la sección "Mediciones eléctricas",
-            // con su inversor y su string identificados.
+            // cada una con su título y sus fotos del antes y el después.
             if (activityId === 'prev-5') {
                 const aviso = document.createElement('p');
                 aviso.className = 'descripcion';
@@ -3161,187 +3040,137 @@
         }
 
         // ============================================================
-        // MEDICIONES ELECTRICAS
+        // MEDICIONES ELÉCTRICAS
         //
-        // Antes esto eran fotos de la pantalla del multímetro metidas bajo
-        // un título "INVERSOR 1", sin decir a qué string pertenecía cada
-        // lectura ni si era antes o después del lavado. En el informe no
-        // aparecía ni un solo número.
+        // Antes esto eran tablas: tensiones y corrientes tecleadas a mano
+        // en una rejilla, colgando de un inversor y de un número de string.
+        // En campo no se usaban. El técnico fotografía la pantalla del
+        // multímetro, que es la prueba real de la lectura, y la tabla
+        // quedaba vacía o a medias.
         //
-        // Ahora son datos: cada inversor tiene sus strings identificados y
-        // su salida AC, y todo se mide antes y después del mantenimiento,
-        // que es lo que demuestra la mejora de generación.
+        // Ahora cada medición es un bloque libre: el técnico escribe el
+        // título («L1 + Tierra», «String 3 · Inversor 2»), sube la foto del
+        // antes y la del después y añade una observación si hace falta,
+        // dictada o redactada con IA como en el resto del informe. Puede
+        // añadir tantas como necesite, y todas salen en el PDF al mismo
+        // tamaño que las demás fotos.
         // ============================================================
 
-        // Filas de la tabla AC. La mayoría de los proyectos son bifásicos,
-        // pero también hay trifásicos; y en los dos casos hace falta medir
-        // de línea a neutro y de neutro a tierra, como pide el protocolo.
-        const FILAS_AC = {
-            bifasico: {
-                lineas: [['v12', 'Tensi\u00f3n L1-L2 (V)']],
-                neutro: [['v1n', 'Tensi\u00f3n L1-N (V)'], ['v2n', 'Tensi\u00f3n L2-N (V)']],
-                tierra: [['vnt', 'Tensi\u00f3n N-T (V)']],
-                corrientes: [['i1', 'Corriente L1 (A)'], ['i2', 'Corriente L2 (A)']]
-            },
-            trifasico: {
-                lineas: [
-                    ['v12', 'Tensi\u00f3n L1-L2 (V)'],
-                    ['v23', 'Tensi\u00f3n L2-L3 (V)'],
-                    ['v13', 'Tensi\u00f3n L1-L3 (V)']
-                ],
-                neutro: [
-                    ['v1n', 'Tensi\u00f3n L1-N (V)'],
-                    ['v2n', 'Tensi\u00f3n L2-N (V)'],
-                    ['v3n', 'Tensi\u00f3n L3-N (V)']
-                ],
-                tierra: [['vnt', 'Tensi\u00f3n N-T (V)']],
-                corrientes: [
-                    ['i1', 'Corriente L1 (A)'],
-                    ['i2', 'Corriente L2 (A)'],
-                    ['i3', 'Corriente L3 (A)']
-                ]
-            }
+        const ROTULO_MEDICION = {
+            'contenedor-mediciones': 'Medición',
+            'contenedor-strings': 'Medición de string'
         };
 
-        // Arma la lista de filas según el tipo y si se miden los neutros.
-        function filasAC(tipo, conNeutro) {
-            const g = FILAS_AC[tipo] || FILAS_AC.bifasico;
-            return g.lineas
-                .concat(conNeutro ? g.neutro : [])
-                .concat(g.tierra)
-                .concat(g.corrientes);
+        const EJEMPLO_MEDICION = {
+            'contenedor-mediciones': 'Ej.: L1 + Tierra',
+            'contenedor-strings': 'Ej.: String 3 · Inversor 2'
+        };
+
+        // Renumera para que el índice siga el orden visible tras un borrado.
+        function renumerarMediciones(contenedorId) {
+            const rotulo = ROTULO_MEDICION[contenedorId] || 'Medición';
+            document.querySelectorAll('#' + contenedorId + ' .medicion-item')
+                .forEach((el, i) => {
+                    const indice = el.querySelector('.indice');
+                    if (indice) indice.textContent = i + 1;
+                    const titulo = el.querySelector('.titulo-medicion');
+                    if (titulo) titulo.setAttribute('aria-label', rotulo + ' ' + (i + 1));
+                });
         }
 
-        function pintarCamposAC(inversor, tipo, conNeutro, valores) {
-            const zona = inversor.querySelector('.campos-ac');
-            const filas = filasAC(tipo, conNeutro);
-            const v = valores || {};
-
-            let html = '<span class="cabecera izq"></span>' +
-                       '<span class="cabecera">Antes</span>' +
-                       '<span class="cabecera">Despu\u00e9s</span>';
-
-            filas.forEach(([clave, rotulo]) => {
-                const antes = (v[clave] && v[clave].antes) || '';
-                const despues = (v[clave] && v[clave].despues) || '';
-                html +=
-                    '<span class="rotulo">' + rotulo + '</span>' +
-                    '<input class="medida antes" data-ac="' + clave + '" data-momento="antes" ' +
-                    'type="number" inputmode="decimal" step="any" placeholder="\u2014" value="' + antes + '">' +
-                    '<input class="medida despues" data-ac="' + clave + '" data-momento="despues" ' +
-                    'type="number" inputmode="decimal" step="any" placeholder="\u2014" value="' + despues + '">';
-            });
-
-            zona.innerHTML = html;
-        }
-
-        // Deja listo un bloque con tabla AC: el select de tipo y la casilla
-        // de neutro repintan las filas conservando lo ya escrito.
-        function conectarAC(bloque, datos) {
-            const d = datos || {};
-            const selectTipo = bloque.querySelector('.tipo-ac');
-            const casilla = bloque.querySelector('.con-neutro');
-
-            selectTipo.value = d.tipoAC || 'bifasico';
-            casilla.checked = d.conNeutro !== false;
-            pintarCamposAC(bloque, selectTipo.value, casilla.checked, d.ac);
-
-            const repintar = () => {
-                pintarCamposAC(bloque, selectTipo.value, casilla.checked, recogerAC(bloque));
-                guardarInforme();
-            };
-            selectTipo.addEventListener('change', repintar);
-            casilla.addEventListener('change', repintar);
-        }
-
-        // Renumera para que los nombres sigan el orden visible tras un borrado.
-        function renumerarInversores() {
-            document.querySelectorAll('#contenedor-inversores .inversor-med').forEach((inv, i) => {
-                inv.querySelector('.nombre-inversor').textContent = 'Inversor ' + (i + 1);
-            });
-        }
-
-        // El siguiente numero libre dentro de un inversor, como sugerencia:
-        // el tecnico puede cambiarlo, porque no siempre se miden todos los
-        // strings ni en orden.
-        function siguienteNumeroString(inversor) {
-            const usados = Array.from(inversor.querySelectorAll('.num-string'))
-                .map(i => parseInt(i.value, 10) || 0);
-            let n = 1;
-            while (usados.indexOf(n) !== -1) n++;
-            return n;
-        }
-
-        function anadirString(inversor, datos) {
-            const clon = document.getElementById('template-string').content.cloneNode(true);
-            const fila = clon.querySelector('.string-fila');
-
-            const poner = (sel, val) => { if (val) fila.querySelector(sel).value = val; };
-            if (datos) {
-                poner('.v-antes', datos.vAntes);
-                poner('.v-despues', datos.vDespues);
-                poner('.i-antes', datos.iAntes);
-                poner('.i-despues', datos.iDespues);
-            }
-            fila.querySelector('.num-string').value =
-                (datos && datos.numero) || siguienteNumeroString(inversor);
-
-            fila.querySelector('.quitar-string').addEventListener('click', () => {
-                fila.remove();
-                actualizarResumen();
-                guardarInforme();
-            });
-
-            inversor.querySelector('.lista-strings').appendChild(fila);
-            return fila;
-        }
-
-        function anadirInversor(datos) {
-            const clon = document.getElementById('template-inversor-med').content.cloneNode(true);
-            const inversor = clon.querySelector('.inversor-med');
+        function anadirMedicion(contenedorId, datos) {
+            const clon = document.getElementById('template-medicion').content.cloneNode(true);
+            const bloque = clon.querySelector('.medicion-item');
             const d = datos || {};
 
-            conectarAC(inversor, d);
+            const titulo = bloque.querySelector('.titulo-medicion');
+            titulo.placeholder = EJEMPLO_MEDICION[contenedorId] || 'Título de la medición';
+            if (d.titulo) titulo.value = d.titulo;
+            if (d.nota) bloque.querySelector('.nota-medicion').value = d.nota;
 
-            inversor.querySelector('.add-string').addEventListener('click', () => {
-                anadirString(inversor);
-                actualizarResumen();
-                guardarInforme();
-            });
-
-            inversor.querySelector('.quitar-inversor').addEventListener('click', async () => {
-                const ok = await confirmar('Quitar inversor',
-                    'Se borran sus mediciones y sus fotos.', 'Quitar');
+            bloque.querySelector('.quitar-medicion').addEventListener('click', async () => {
+                const ok = await confirmar('Quitar medición',
+                    'Se borran su observación y sus fotos.', 'Quitar');
                 if (!ok) return;
-                inversor.remove();
-                renumerarInversores();
+                bloque.remove();
+                renumerarMediciones(contenedorId);
                 actualizarResumen();
                 guardarInforme();
             });
 
-            document.getElementById('contenedor-inversores').appendChild(inversor);
-            conectarSubidaFotos(inversor);
+            document.getElementById(contenedorId).appendChild(bloque);
+            inicializarVoz(bloque);
+            conectarSubidaFotos(bloque);
 
-            (d.strings || []).forEach(st => anadirString(inversor, st));
-            if (!(d.strings || []).length) anadirString(inversor);
+            pintarFotos(galeriaDe(bloque, 'antes'), d.fotosAntes);
+            pintarFotos(galeriaDe(bloque, 'despues'), d.fotosDespues);
 
-            if (d.fotosAntes) pintarFotos(galeriaDe(inversor, 'antes'), d.fotosAntes);
-            if (d.fotosDespues) pintarFotos(galeriaDe(inversor, 'despues'), d.fotosDespues);
-
-            renumerarInversores();
-            return inversor;
+            renumerarMediciones(contenedorId);
+            actualizarResumen();
+            return bloque;
         }
 
-        const recogerAC = (inversor) => {
-            const ac = {};
-            inversor.querySelectorAll('.campos-ac .medida').forEach(inp => {
-                const clave = inp.getAttribute('data-ac');
-                const momento = inp.getAttribute('data-momento');
-                if (!ac[clave]) ac[clave] = { antes: '', despues: '' };
-                ac[clave][momento] = inp.value;
-            });
-            return ac;
+        // ---------- Informes anteriores (v4) ----------
+        // Sus lecturas vivían en tablas que ya no existen. En vez de
+        // perderlas al abrir el informe, se vuelcan como texto dentro de la
+        // observación de la medición correspondiente.
+        const ROTULOS_AC_V4 = {
+            v12: 'L1-L2', v23: 'L2-L3', v13: 'L1-L3',
+            v1n: 'L1-N', v2n: 'L2-N', v3n: 'L3-N', vnt: 'N-T',
+            i1: 'Corriente L1', i2: 'Corriente L2', i3: 'Corriente L3'
         };
+
+        function notaDeAC(ac) {
+            return Object.keys(ac || {})
+                .filter(k => ((ac[k] || {}).antes || '') !== '' ||
+                             ((ac[k] || {}).despues || '') !== '')
+                .map(k => (ROTULOS_AC_V4[k] || k) +
+                          ': antes ' + (ac[k].antes || '—') +
+                          ', después ' + (ac[k].despues || '—'))
+                .join(' · ');
+        }
+
+        function migrarMedicionesV4(informe, listaAC, listaDC) {
+            const conFotos = (b) => (b.fotosAntes || []).length || (b.fotosDespues || []).length;
+
+            const tot = informe.totalizador;
+            if (tot && (notaDeAC(tot.ac) || conFotos(tot))) {
+                listaAC.push({
+                    titulo: 'Totalizador AC',
+                    nota: notaDeAC(tot.ac),
+                    fotosAntes: tot.fotosAntes || [],
+                    fotosDespues: tot.fotosDespues || []
+                });
+            }
+
+            (informe.inversores || []).forEach(inv => {
+                const nombre = inv.nombre || 'Inversor';
+                if (notaDeAC(inv.ac) || conFotos(inv)) {
+                    listaAC.push({
+                        titulo: nombre + ' — salida AC',
+                        nota: notaDeAC(inv.ac),
+                        fotosAntes: inv.fotosAntes || [],
+                        fotosDespues: inv.fotosDespues || []
+                    });
+                }
+
+                (inv.strings || []).forEach(st => {
+                    const lecturas = [
+                        (st.vAntes || '') !== '' ? 'V antes ' + st.vAntes : '',
+                        (st.iAntes || '') !== '' ? 'I antes ' + st.iAntes : '',
+                        (st.vDespues || '') !== '' ? 'V después ' + st.vDespues : '',
+                        (st.iDespues || '') !== '' ? 'I después ' + st.iDespues : ''
+                    ].filter(Boolean).join(' · ');
+                    if (!lecturas) return;
+                    listaDC.push({
+                        titulo: nombre + ' · String ' + (st.numero || '?'),
+                        nota: lecturas,
+                        fotosAntes: [],
+                        fotosDespues: []
+                    });
+                });
+            });
+        }
 
         // Conecta TODAS las galerías que haya dentro de `raiz`: ahora cada
         // bloque tiene dos, la del antes y la del después.
@@ -3542,11 +3371,15 @@
                 });
             });
 
-            document.getElementById('btn-add-inversor').addEventListener('click', () => {
-                anadirInversor();
-                actualizarResumen();
-                guardarInforme();
-            });
+            const botonMedicion = (botonId, contenedorId) => {
+                document.getElementById(botonId).addEventListener('click', () => {
+                    const bloque = anadirMedicion(contenedorId);
+                    bloque.querySelector('.titulo-medicion').focus();
+                    guardarInforme();
+                });
+            };
+            botonMedicion('btn-add-medicion', 'contenedor-mediciones');
+            botonMedicion('btn-add-string', 'contenedor-strings');
 
             document.getElementById('btn-personalizada').addEventListener('click', () => {
                 const el = crearActividadPersonalizada();
@@ -4079,149 +3912,56 @@
             };
 
             // ----------------------------------------------------------
-            // TABLAS
+            // MEDICIONES
+            //
+            // Ya no hay tablas de números: cada medición es su título, una
+            // observación opcional y sus fotos del antes y el después, que
+            // salen del mismo tamaño que todas las demás del informe.
             // ----------------------------------------------------------
-            const dibujarTabla = async (encabezados, filas, anchos) => {
-                const altoFila = 6.2;
-                const total = anchos.reduce((a, b) => a + b, 0);
-                const x0 = margin + (contentWidth - total) / 2;
 
-                const pintarEncabezado = () => {
-                    doc.setFillColor(55, 65, 81);
-                    doc.rect(x0, yPos, total, altoFila, 'F');
-                    doc.setFontSize(8);
-                    doc.setFont('helvetica', 'bold');
-                    doc.setTextColor(255, 255, 255);
-                    let x = x0;
-                    encabezados.forEach((h, i) => {
-                        doc.text(String(h), x + anchos[i] / 2, yPos + 4.2, { align: 'center' });
-                        x += anchos[i];
-                    });
-                    yPos += altoFila;
-                };
+            // Una medición en blanco (sin título, sin nota y sin fotos) no
+            // llega al PDF: son las que quedan puestas y sin rellenar.
+            const medicionesUtiles = (contenedorId) => Array.from(
+                document.querySelectorAll('#' + contenedorId + ' .medicion-item')
+            ).filter(el => {
+                const v = (sel) => ((el.querySelector(sel) || {}).value || '').trim();
+                return v('.titulo-medicion') || v('.nota-medicion') ||
+                       el.querySelector('.image-preview-item');
+            });
 
-                await asegurarEspacio(altoFila * 3);
-                pintarEncabezado();
+            const dibujarGrupoMediciones = async (bloques, subtitulo) => {
+                await asegurarEspacio(30);
+                await escribirParrafo(subtitulo,
+                    { size: 11, style: 'bold', color: [55, 65, 81], after: 3, justificar: false });
 
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8.5);
+                for (let i = 0; i < bloques.length; i++) {
+                    const el = bloques[i];
+                    const v = (sel) => ((el.querySelector(sel) || {}).value || '').trim();
 
-                for (let f = 0; f < filas.length; f++) {
-                    if (yPos + altoFila > LIMITE_INFERIOR) {
-                        nuevaPagina();
-                        yPos = TOPE_SUPERIOR;
-                        pintarEncabezado();
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(8.5);
+                    await asegurarEspacio(22);
+                    await escribirParrafo('• ' + (v('.titulo-medicion') || 'Medición ' + (i + 1)),
+                        { size: 12, style: 'bold', color: [17, 24, 39], after: 2, justificar: false });
+
+                    if (v('.nota-medicion')) {
+                        await escribirParrafo(v('.nota-medicion'),
+                            { size: 10, style: 'italic', color: [75, 85, 99], indent: 5 });
                     }
 
-                    if (f % 2 === 1) {
-                        doc.setFillColor(244, 246, 250);
-                        doc.rect(x0, yPos, total, altoFila, 'F');
-                    }
-
-                    doc.setTextColor(17, 24, 39);
-                    let x = x0;
-                    filas[f].forEach((celda, i) => {
-                        const texto = (celda === '' || celda === null || celda === undefined) ? '--' : String(celda);
-                        // La primera columna identifica la fila: va alineada a la
-                        // izquierda; las cifras, centradas.
-                        if (i === 0) {
-                            doc.setFont('helvetica', 'bold');
-                            doc.text(texto, x + 2, yPos + 4.2);
-                            doc.setFont('helvetica', 'normal');
-                        } else {
-                            doc.text(texto, x + anchos[i] / 2, yPos + 4.2, { align: 'center' });
-                        }
-                        x += anchos[i];
-                    });
-
-                    doc.setDrawColor(226, 232, 240);
-                    doc.setLineWidth(0.15);
-                    doc.line(x0, yPos + altoFila, x0 + total, yPos + altoFila);
-                    yPos += altoFila;
+                    await dibujarGalerias(el);
+                    yPos += 3;
                 }
-
-                yPos += 4;
-            };
-
-            // Etiquetas de las filas AC, iguales a las del formulario.
-            const ROTULOS_AC = {
-                v12: 'Tensión L1-L2 (V)', v23: 'Tensión L2-L3 (V)', v13: 'Tensión L1-L3 (V)',
-                v1n: 'Tensión L1-N (V)', v2n: 'Tensión L2-N (V)', v3n: 'Tensión L3-N (V)',
-                vnt: 'Tensión N-T (V)',
-                i1: 'Corriente L1 (A)', i2: 'Corriente L2 (A)', i3: 'Corriente L3 (A)'
-            };
-
-            // Tabla AC de un bloque cualquiera (totalizador o inversor).
-            const dibujarTablaAC = async (bloque) => {
-                const ac = {};
-                bloque.querySelectorAll('.campos-ac .medida').forEach(inp => {
-                    const clave = inp.getAttribute('data-ac');
-                    if (!ac[clave]) ac[clave] = {};
-                    ac[clave][inp.getAttribute('data-momento')] = inp.value;
-                });
-                const filas = Object.keys(ac)
-                    .filter(k => (ac[k].antes || '') !== '' || (ac[k].despues || '') !== '')
-                    .map(k => [ROTULOS_AC[k] || k, ac[k].antes || '', ac[k].despues || '']);
-
-                if (!filas.length) return false;
-                await escribirParrafo('Salida AC',
-                    { size: 9, style: 'bold', color: [55, 65, 81], after: 2, justificar: false });
-                await dibujarTabla(['Medida', 'Antes', 'Después'], filas, [80, 50, 50]);
-                return true;
             };
 
             const dibujarMediciones = async () => {
-                const totalizador = document.getElementById('totalizador');
-                const inversores = document.querySelectorAll('#contenedor-inversores .inversor-med');
-
-                const hayTotalizador = Array.from(
-                    totalizador.querySelectorAll('.campos-ac .medida')).some(i => i.value !== '');
-                if (!inversores.length && !hayTotalizador) return;
+                const ac = medicionesUtiles('contenedor-mediciones');
+                const dc = medicionesUtiles('contenedor-strings');
+                if (!ac.length && !dc.length) return;
 
                 yPos += 5;
                 await escribirTitulo('MEDICIONES ELÉCTRICAS');
 
-                if (hayTotalizador) {
-                    await asegurarEspacio(40);
-                    await escribirParrafo('TOTALIZADOR AC',
-                        { size: 11, style: 'bold', color: [17, 24, 39], after: 3, justificar: false });
-                    await dibujarTablaAC(totalizador);
-                    await dibujarGalerias(totalizador);
-                    yPos += 3;
-                }
-
-                for (const inv of inversores) {
-                    const nombre = inv.querySelector('.nombre-inversor').textContent.trim();
-                    await asegurarEspacio(40);
-                    await escribirParrafo(nombre.toUpperCase(),
-                        { size: 11, style: 'bold', color: [17, 24, 39], after: 3, justificar: false });
-
-                    // --- Strings (DC) ---
-                    const strings = Array.from(inv.querySelectorAll('.string-fila')).map(st => {
-                        const v = (sel) => (st.querySelector(sel) || {}).value || '';
-                        return [
-                            'String ' + ((st.querySelector('.num-string') || {}).value || '?'),
-                            v('.v-antes'), v('.i-antes'), v('.v-despues'), v('.i-despues')
-                        ];
-                    }).filter(f => f.slice(1).some(c => c !== ''));
-
-                    if (strings.length) {
-                        await escribirParrafo('Strings (DC)',
-                            { size: 9, style: 'bold', color: [55, 65, 81], after: 2, justificar: false });
-                        await dibujarTabla(
-                            ['String', 'V antes', 'I antes', 'V después', 'I después'],
-                            strings,
-                            [36, 36, 36, 36, 36]
-                        );
-                    }
-
-                    await dibujarTablaAC(inv);
-
-                    await dibujarGalerias(inv);
-                    yPos += 3;
-                }
+                if (ac.length) await dibujarGrupoMediciones(ac, 'Mediciones AC');
+                if (dc.length) await dibujarGrupoMediciones(dc, 'Mediciones de string (DC)');
             };
 
             // ==========================================================
