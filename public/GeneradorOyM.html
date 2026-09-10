@@ -3702,14 +3702,13 @@
             // motivo todo esto pesaba 6,4 MB.
             // ----------------------------------------------------------
 
-            // Todas las fotos del informe miden lo mismo: dos por fila, en
-            // proporcion 4:3, recortadas al centro para llenar la celda.
+            // Todas las fotos del informe miden lo mismo, en proporcion 3:4 y
+            // recortadas al centro para llenar la celda.
             //
             // Antes el tamano variaba segun cuantas hubiera en cada bloque, y
             // el resultado era un documento donde ninguna foto media igual que
             // la de al lado. Un tamano unico es lo que hace que la pagina se
             // vea ordenada.
-            const COLUMNAS = 2;
             const HUECO = 6;
 
             // Celda vertical: en campo las fotos se toman de pie con el
@@ -3719,12 +3718,42 @@
             // 50 x 66,7 mm. Con el encabezado y el pie quedan 225 mm utiles:
             // a este tamano una fila cuesta 75 mm y caben tres por pagina, en
             // vez de dos, que era lo que dejaba esos huecos al pie.
-            const ANCHO_CELDA = 50;
+            //
+            // Nunca mas ancha que la caja de texto: las fotos van alineadas
+            // con el parrafo, no sobresaliendo por los margenes.
+            const ANCHO_CELDA = Math.min(50, contentWidth);
             const ALTO_CELDA = ANCHO_CELDA / PROPORCION;
 
-            // El par va centrado en la pagina, como en el informe de
-            // referencia. El x concreto se calcula por fila, porque una fila
-            // puede ir encogida para no dejar la pagina a medias.
+            // Cuantas caben de ancho sin salirse del texto. Con 50 mm y una
+            // caja de 180 son tres: 3 x 50 + 2 x 6 = 162 mm.
+            const MAX_COLUMNAS = Math.max(1,
+                Math.floor((contentWidth + HUECO) / (ANCHO_CELDA + HUECO)));
+
+            // Como se reparten `n` fotos en filas.
+            //
+            // Antes iban de dos en dos y punto, asi que tres fotos salian
+            // como 2 + 1 y la ultima fila quedaba medio vacia; con el rotulo
+            // debajo, ese hueco se veia desde lejos.
+            //
+            // Ahora se busca primero una rejilla exacta: el mayor numero de
+            // columnas que divida al total, de modo que todas las filas
+            // lleven las mismas fotos. 3 -> 3; 4 -> 2 + 2; 6 -> 3 + 3;
+            // 8 -> 2 + 2 + 2 + 2; 9 -> 3 + 3 + 3.
+            //
+            // Cuando no hay rejilla exacta (5, 7, 11... fotos) se reparte lo
+            // mas parejo posible sin pasar del maximo, y las filas de mas
+            // van primero: 5 -> 3 + 2, 7 -> 3 + 2 + 2. Lo que nunca sale es
+            // una fila suelta con una sola foto.
+            const repartirFilas = (n) => {
+                for (let c = MAX_COLUMNAS; c >= 2; c--) {
+                    if (n % c === 0) return new Array(n / c).fill(c);
+                }
+                const filas = Math.ceil(n / MAX_COLUMNAS);
+                const base = Math.floor(n / filas);
+                const sobran = n % filas;
+                return Array.from({ length: filas },
+                    (_, i) => base + (i < sobran ? 1 : 0));
+            };
 
             // Recorte al centro a una proporcion cualquiera. Lo usa la
             // franja de la portada, que es mucho mas ancha que alta.
@@ -3821,11 +3850,23 @@
             // Por debajo de esto la diferencia ya se notaria al hojear.
             const ENCOGIDO_MINIMO = 0.82;
 
+            // Lo que hay que reservar antes de escribir el titulo de un
+            // bloque. Si el bloque trae fotos se cuenta tambien su primera
+            // fila (ya encogida al maximo permitido): si no, el titulo se
+            // quedaba solo al pie y sus fotos empezaban en la pagina
+            // siguiente, dejando el hueco justo debajo del titulo.
+            const reservaDeBloque = (bloque) => 22 +
+                (bloque && bloque.querySelector('.image-preview-item')
+                    ? ALTO_CELDA * ENCOGIDO_MINIMO + ALTO_ROTULO
+                    : 0);
+
             const dibujarFotos = async (fotos) => {
                 if (!fotos.length) return;
 
-                for (let i = 0; i < fotos.length; i += COLUMNAS) {
-                    const fila = fotos.slice(i, i + COLUMNAS);
+                let desde = 0;
+                for (const columnas of repartirFilas(fotos.length)) {
+                    const fila = fotos.slice(desde, desde + columnas);
+                    desde += columnas;
 
                     // Si la fila no cabe pero le falta poco, se encoge en vez
                     // de saltar: saltar dejaba media pagina en blanco justo
@@ -3844,8 +3885,11 @@
 
                     const ancho = ANCHO_CELDA * escala;
                     const alto = ALTO_CELDA * escala;
+                    // Centrada sobre la caja de texto, contando las fotos que
+                    // lleva ESTA fila: con dos por fila el aire se reparte a
+                    // los lados en vez de dejar un hueco de celda a la derecha.
                     const inicioX = margin + (contentWidth -
-                        (ancho * COLUMNAS + HUECO * (COLUMNAS - 1))) / 2;
+                        (ancho * fila.length + HUECO * (fila.length - 1))) / 2;
 
                     fila.forEach((foto, j) => {
                         const x = inicioX + j * (ancho + HUECO);
@@ -3938,7 +3982,7 @@
                     const el = bloques[i];
                     const v = (sel) => ((el.querySelector(sel) || {}).value || '').trim();
 
-                    await asegurarEspacio(22);
+                    await asegurarEspacio(reservaDeBloque(el));
                     await escribirParrafo('• ' + (v('.titulo-medicion') || 'Medición ' + (i + 1)),
                         { size: 12, style: 'bold', color: [17, 24, 39], after: 2, justificar: false });
 
@@ -4124,7 +4168,7 @@
                     const descElem = item.querySelector('.activity-description');
                     const notesElem = item.querySelector('.activity-notes');
 
-                    await asegurarEspacio(22);
+                    await asegurarEspacio(reservaDeBloque(item));
 
                     // Título de actividad
                     if (titleElem) {
@@ -4163,7 +4207,7 @@
                 for (const item of resultItems) {
                     const textElem = item.querySelector('.resultado-text');
 
-                    await asegurarEspacio(22);
+                    await asegurarEspacio(reservaDeBloque(item));
 
                     if (textElem && textElem.value.trim()) {
                         await escribirParrafo(textElem.value.trim());
@@ -4186,7 +4230,7 @@
                 for (const item of anomalyItems) {
                     const textElem = item.querySelector('.anomalia-text');
 
-                    await asegurarEspacio(22);
+                    await asegurarEspacio(reservaDeBloque(item));
 
                     if (textElem && textElem.value.trim()) {
                         await escribirParrafo(textElem.value.trim());
@@ -4209,7 +4253,7 @@
                 for (const item of recItems) {
                     const textElem = item.querySelector('.recomendacion-text');
 
-                    await asegurarEspacio(22);
+                    await asegurarEspacio(reservaDeBloque(item));
 
                     if (textElem && textElem.value.trim()) {
                         await escribirParrafo(textElem.value.trim());
